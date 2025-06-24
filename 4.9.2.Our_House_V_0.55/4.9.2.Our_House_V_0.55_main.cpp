@@ -8,6 +8,59 @@
 #include "Scene_Definitions.h"
 
 Scene scene;
+int main_camera_index = 0;
+static int original_main_camera_index = 0;
+static bool cctv_control_mode = false;
+
+void move_main_camera(int axis, float amount) {
+	if (main_camera_index == 4) { // cctv 모드에서는 사용 금지
+		return;
+	}
+	Camera& cam = scene.camera_list[main_camera_index].get();
+
+	glm::vec3 delta(0.0f);
+	if (axis == 0) {        // U축 (카메라 오른쪽)
+		delta = cam.cam_view.uaxis * amount;
+	}
+	else if (axis == 1) {   // V축 (카메라 위쪽)
+		delta = cam.cam_view.vaxis * amount;
+	}
+	else if (axis == 2) {   // N축 (카메라 뒤쪽, 앞으로 가려면 음수)
+		delta = cam.cam_view.naxis * amount;
+	}
+	cam.cam_view.pos += delta;
+	cam.ViewMatrix = glm::lookAt(cam.cam_view.pos, cam.cam_view.pos - cam.cam_view.naxis, cam.cam_view.vaxis);
+}
+
+void rotate_main_camera(int axis, float angle) {
+	Camera& cam = scene.camera_list[main_camera_index].get();
+	glm::mat4 R = glm::mat4(1.0f);
+	if (axis == 0) R = glm::rotate(R, angle, cam.cam_view.uaxis);
+	if (axis == 1) R = glm::rotate(R, angle, cam.cam_view.vaxis);
+	if (axis == 2) R = glm::rotate(R, angle, cam.cam_view.naxis);
+
+	cam.cam_view.uaxis = glm::mat3(R) * cam.cam_view.uaxis;
+	cam.cam_view.vaxis = glm::mat3(R) * cam.cam_view.vaxis;
+	cam.cam_view.naxis = glm::mat3(R) * cam.cam_view.naxis;
+
+	cam.ViewMatrix = glm::lookAt(cam.cam_view.pos, cam.cam_view.pos - cam.cam_view.naxis, cam.cam_view.vaxis);
+}
+
+void zoom_main_camera(float zoom_factor) {
+	Camera& cam = scene.camera_list[main_camera_index].get();
+	float& fovy = cam.cam_proj.params.pers.fovy;
+	
+	// fov 범위 제한
+	if (main_camera_index == 4) {  // CCTV
+		fovy = glm::clamp(fovy * zoom_factor, 15.0f * TO_RADIAN, 90.0f * TO_RADIAN);
+	}
+	else {  // 일반 카메라
+		fovy = glm::clamp(fovy * zoom_factor, 10.0f * TO_RADIAN, 120.0f * TO_RADIAN);
+	}
+
+	cam.ProjectionMatrix = glm::perspective(cam.cam_proj.params.pers.fovy, cam.cam_proj.params.pers.aspect,
+		cam.cam_proj.params.pers.n, cam.cam_proj.params.pers.f);
+}
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -25,6 +78,7 @@ void display(void) {
 
 void keyboard(unsigned char key, int x, int y) {
 	static int flag_cull_face = 0, polygon_fill_on = 0, depth_test_on = 0;
+	static bool rotation_mode = false;
 
 	switch (key) {
 	case 27: // ESC key
@@ -55,7 +109,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'f':
 		polygon_fill_on = 1 - polygon_fill_on;
 		if (polygon_fill_on) {
-		 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			fprintf(stdout, "^^^ Polygon filling enabled.\n");
 		}
 		else {
@@ -76,7 +130,77 @@ void keyboard(unsigned char key, int x, int y) {
 		}
 		glutPostRedisplay();
 		break;
+
+	case 'v':
+		cctv_control_mode = !cctv_control_mode;
+		if (cctv_control_mode) {
+			original_main_camera_index = main_camera_index; // 현재 카메라 저장
+			main_camera_index = 4;
+			printf("cctv control mode on - rotate/zoom only\n");
+		}
+		else {
+			main_camera_index = original_main_camera_index;
+			printf("back to main cam control");
+		}
+		break;
+	case ' ':
+		rotation_mode = !rotation_mode;
+		printf("mode: %s\n", rotation_mode ? "rotation" : "movement");
+		break;
+
+		// 내가 정의한 keyborad 입력
+	case 'q':
+		if (rotation_mode)
+			rotate_main_camera(0, -1.0f * TO_RADIAN);
+		else
+			move_main_camera(0, -10.0f);
+		break;
+
+	case 'w':
+		if (rotation_mode) rotate_main_camera(0, 1.0f * TO_RADIAN);
+		else
+			move_main_camera(0, +10.0f);
+		break;
+
+	case 'e':
+		if (rotation_mode) rotate_main_camera(1, -1.0f * TO_RADIAN);
+		else
+			move_main_camera(1, -10.0f);
+		break;
+
+	case 'r':
+		if (rotation_mode) rotate_main_camera(1, 1.0f * TO_RADIAN);
+		else
+			move_main_camera(1, +10.0f);
+		break;
+
+	case 't':
+		if (rotation_mode) rotate_main_camera(2, -1.0f * TO_RADIAN);
+		else
+			move_main_camera(2, -10.0f);
+		break;
+
+	case 'y':
+		if (rotation_mode) rotate_main_camera(2, 1.0f * TO_RADIAN);
+		else
+			move_main_camera(2, +10.0f);
+		break;
+
+	case 'x':
+		scene.show_camera_frames = !scene.show_camera_frames;
+		printf("Camera frame display: %s\n", scene.show_camera_frames ? "ON" : "OFF");
+		glutPostRedisplay();
+		break;
 	}
+	glutPostRedisplay();
+}
+
+void mouse_wheel(int wheel, int direction, int x, int y) {
+	if (direction > 0)
+		zoom_main_camera(0.95f);
+	else
+		zoom_main_camera(1.05f);
+	glutPostRedisplay();
 }
 
 void reshape(int width, int height) {
@@ -96,6 +220,7 @@ void timer_scene(int index) {
 void register_callbacks(void) {
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	glutMouseWheelFunc(mouse_wheel);
 	glutReshapeFunc(reshape);
  	glutTimerFunc(100, timer_scene, 0);
 //	glutCloseFunc(cleanup_OpenGL_stuffs or else); // Do it yourself!!!
