@@ -47,6 +47,9 @@ void Static_Object::prepare_geom_of_static_object() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
 	glEnableVertexAttribArray(0);
 
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, (GLvoid*)(sizeof(glm::vec3)));
+	glEnableVertexAttribArray(1);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
@@ -72,7 +75,7 @@ void Building::define_object() {
 
 /// my static objects
 void Ant::define_object() {
-	glm::mat4* cur_MM; // ¸ðµ¨¸µ º¯È¯
+	glm::mat4* cur_MM; // ï¿½ðµ¨¸ï¿½ ï¿½ï¿½È¯
 	Material* cur_material;
 	strcpy(filename, "Data/static_objects/ant_vnt.geom");
 	n_fields = 8;
@@ -189,14 +192,16 @@ void print_mat4(const char* string, glm::mat4 M) {
 		fprintf(stdout, "*** COL[%d] (%f, %f, %f, %f)\n", i, M[i].x, M[i].y, M[i].z, M[i].w);
 	fprintf(stdout, "**************\n\n");
 }
+
 void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
 	std::vector<std::reference_wrapper<Shader>>& shader_list) {
 	glm::mat4 ModelViewProjectionMatrix;
 	glFrontFace(front_face_mode);
+
 	for (int i = 0; i < instances.size(); i++) {
 		ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * instances[i].ModelMatrix;
 		switch (shader_kind) {
-		case SHADER_SIMPLE:
+		case SHADER_SIMPLE: {
 			Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[shader_kind]].get());
 			glUseProgram(shader_simple_ptr->h_ShaderProgram);
 			glUniformMatrix4fv(shader_simple_ptr->loc_ModelViewProjectionMatrix, 1, GL_FALSE,
@@ -205,6 +210,62 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 				instances[i].material.diffuse.g, instances[i].material.diffuse.b);
 			break;
 		}
+		case SHADER_GOURAUD: {
+			auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+			glm::vec3 view_position_view = glm::vec3(0.0f);
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+			Material& m = instances[i].material;
+			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+			break;
+		}
+		case SHADER_PHONG: {
+			auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+			glm::vec3 view_position_view = glm::vec3(0.0f);
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+			Material& m = instances[i].material;
+			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+			break;
+		}
+		}
+
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3 * n_triangles);
 		glBindVertexArray(0);

@@ -35,7 +35,7 @@ enum DYNAMIC_OBJECT_ID {
 	DYNAMIC_OBJECT_WOLF = 0, DYNAMIC_OBJECT_SPIDER
 };
 
-enum SHADER_ID { SHADER_SIMPLE = 0, SHADER_PHONG, SHADER_PHONG_TEXUTRE };
+enum SHADER_ID { SHADER_SIMPLE = 0, SHADER_GOURAUD, SHADER_PHONG };
 
 struct Shader {
 	ShaderInfo shader_info[3];
@@ -55,9 +55,27 @@ struct Shader_Simple : Shader {
 	void prepare_shader();
 };
 
+struct Shader_Gouraud : Shader {
+	GLint loc_ModelViewMatrix;
+	GLint loc_NormalMatrix;
+	GLint loc_light_position;
+	GLint loc_view_position;
+
+	GLint loc_material_ambient;
+	GLint loc_material_diffuse;
+	GLint loc_material_specular;
+	GLint loc_material_shininess;
+	void prepare_shader();
+};
+
+struct Shader_Phong : Shader_Gouraud {
+	void prepare_shader();
+};
+
 struct Shader_Data {
 	Shader_Simple shader_simple;
-	// Shader_Phong shader_phong;
+	Shader_Gouraud shader_gouraud;
+	Shader_Phong shader_phong;
 	// Shader_Phong_Texture Shader_Phong_texture;
 };
 
@@ -201,6 +219,7 @@ struct Scene {
 	Shader_Data shader_data;
 	std::vector<std::reference_wrapper<Shader>> shader_list;
 	SHADER_ID shader_kind;
+	//SHADER_ID ironman_shader_mode = SHADER_GOURAUD;
 
 	Window window; // for a better code, this must be defined in another structure!
 

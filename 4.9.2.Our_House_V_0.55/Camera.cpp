@@ -16,12 +16,12 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 		// let's use glm funtions to set up the initial camera pose
 		ViewMatrix = glm::lookAt(glm::vec3(-600.0f, -600.0f, 400.0f), glm::vec3(125.0f, 80.0f, 25.0f),
 			glm::vec3(0.0f, 0.0f, 1.0f)); // initial pose for main camera
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
 		cam_view.naxis = glm::vec3(ViewMatrix[0][2], ViewMatrix[1][2], ViewMatrix[2][2]);
-		// Ä«¸Þ¶ó ¼Ó¼ºµéÀÌ °è¼ÓÇØ¼­ º¯È­ÇÏ´Â µ¿Àû camÀÌ¹Ç·Î
-		// ¿ª°è»êÀ» ÅëÇÑ pos ´Ù½Ã °è»êÇØ¾ß ÇÔ
+		// Ä«ï¿½Þ¶ï¿½ ï¿½Ó¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½È­ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ camï¿½Ì¹Ç·ï¿½
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ pos ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½
 		R33_t = glm::transpose(glm::mat3(ViewMatrix));
 		T = glm::mat4(R33_t) * ViewMatrix;
 		cam_view.pos = -glm::vec3(T[3][0], T[3][1], T[3][2]); // why does this work?
@@ -50,20 +50,20 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 		cam_view.pos = glm::vec3(40.0f, 40.0f, 45.0f);
 		glm::vec3 target = glm::vec3(25.0f, 25.0f, 10.0f);
 		ViewMatrix = glm::lookAt(cam_view.pos, target, glm::vec3(0.0f, 0.0f, 1.0f)); // initial pose for main camera
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
 		cam_view.naxis = glm::vec3(ViewMatrix[0][2], ViewMatrix[1][2], ViewMatrix[2][2]);
 		
 		cam_proj.projection_type = CAMERA_PROJECTION_PERSPECTIVE;
-		cam_proj.params.pers.fovy = 65.0f * TO_RADIAN; // Ä«¸Þ¶ó ½Ã¾ß°¢
+		cam_proj.params.pers.fovy = 65.0f * TO_RADIAN; // Ä«ï¿½Þ¶ï¿½ ï¿½Ã¾ß°ï¿½
 		cam_proj.params.pers.aspect = win_aspect_ratio;
 		cam_proj.params.pers.n = 1.0f;
 		cam_proj.params.pers.f = 1000.0f;
 
 		ProjectionMatrix = glm::perspective(cam_proj.params.pers.fovy, cam_proj.params.pers.aspect,
 			cam_proj.params.pers.n, cam_proj.params.pers.f);
-		// ºäÆ÷Æ® - È­¸é¿¡ µµ½Ã
+		// ï¿½ï¿½ï¿½ï¿½Æ® - È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½
 		view_port.x = 10;
 		view_port.y = win_height - 10 - 150;
 		view_port.w = 200;
@@ -78,7 +78,7 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 		cam_view.pos = glm::vec3(100.0f, 75.0f, 45.0f);
 		glm::vec3 target = glm::vec3(100.0f, 120.0f, 10.0f);
 		ViewMatrix = glm::lookAt(cam_view.pos, target, glm::vec3(0.0f, 0.0f, 1.0f)); // initial pose for main camera
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
 		cam_view.naxis = glm::vec3(ViewMatrix[0][2], ViewMatrix[1][2], ViewMatrix[2][2]);
@@ -91,7 +91,7 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 
 		ProjectionMatrix = glm::perspective(cam_proj.params.pers.fovy, cam_proj.params.pers.aspect,
 			cam_proj.params.pers.n, cam_proj.params.pers.f);
-		// ºäÆ÷Æ® - È­¸é¿¡ µµ½Ã
+		// ï¿½ï¿½ï¿½ï¿½Æ® - È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½
 		view_port.x = 10;
 		view_port.y = win_height - 10*2 - 150*2;
 		view_port.w = 200;
@@ -106,7 +106,7 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 		cam_view.pos = glm::vec3(180.0f, 130.0f, 45.0f);
 		glm::vec3 target = glm::vec3(170.0f, 120.0f, 10.0f);
 		ViewMatrix = glm::lookAt(cam_view.pos, target, glm::vec3(0.0f, 0.0f, 1.0f)); // initial pose for main camera
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
 		cam_view.naxis = glm::vec3(ViewMatrix[0][2], ViewMatrix[1][2], ViewMatrix[2][2]);
@@ -119,7 +119,7 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 
 		ProjectionMatrix = glm::perspective(cam_proj.params.pers.fovy, cam_proj.params.pers.aspect,
 			cam_proj.params.pers.n, cam_proj.params.pers.f);
-		// ºäÆ÷Æ® - È­¸é¿¡ µµ½Ã
+		// ï¿½ï¿½ï¿½ï¿½Æ® - È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½
 		view_port.x = 10;
 		view_port.y = win_height - 10*3 - 150*3;
 		view_port.w = 200;
@@ -130,17 +130,17 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 		flag_valid = true;
 		flag_move = true;
 
-		glm::vec3 cctv_position = glm::vec3(100.0f, 75.0f, 45.0f);  // °Ç¹° Áß¾Ó ÃµÀå
-		glm::vec3 cctv_target = glm::vec3(80.0f, 60.0f, 10.0f);     // °Å½Ç ¹Ù´Ú ÂÊ
+		glm::vec3 cctv_position = glm::vec3(100.0f, 75.0f, 45.0f);  // ï¿½Ç¹ï¿½ ï¿½ß¾ï¿½ Ãµï¿½ï¿½
+		glm::vec3 cctv_target = glm::vec3(80.0f, 60.0f, 10.0f);     // ï¿½Å½ï¿½ ï¿½Ù´ï¿½ ï¿½ï¿½
 
 		ViewMatrix = glm::lookAt(cctv_position, cctv_target, glm::vec3(0.0f, 0.0f, 1.0f));
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
 		cam_view.naxis = glm::vec3(ViewMatrix[0][2], ViewMatrix[1][2], ViewMatrix[2][2]);
-		// Ä«¸Þ¶ó ¼Ó¼ºµéÀÌ °è¼ÓÇØ¼­ º¯È­ÇÏ´Â µ¿Àû camÀÌ¹Ç·Î
-		// ¿ª°è»êÀ» ÅëÇÑ pos ´Ù½Ã °è»êÇØ¾ß ÇÔ
+		// Ä«ï¿½Þ¶ï¿½ ï¿½Ó¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½È­ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ camï¿½Ì¹Ç·ï¿½
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ pos ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½
 		R33_t = glm::transpose(glm::mat3(ViewMatrix));
 		T = glm::mat4(R33_t) * ViewMatrix;
 		cam_view.pos = -glm::vec3(T[3][0], T[3][1], T[3][2]); // why does this work?
@@ -165,15 +165,15 @@ void Perspective_Camera::define_camera(int win_width, int win_height, float win_
 
 void Orthographic_Camera::define_camera(int win_width, int win_height, float win_aspect_ratio) {
 	switch (camera_id) {
-	case CAMERA_SIDE_FRONT: {// Á¤¸éµµ
+	case CAMERA_SIDE_FRONT: {// ï¿½ï¿½ï¿½éµµ
 		flag_valid = true;
 		flag_move = false;
 
-		glm::vec3 eye_pos = glm::vec3(115.0f, -300.0f, 25.0f); // Á¤¸é¿¡¼­
-		glm::vec3 target = glm::vec3(115.0f, 50.0f, 25.0f); // °Ç¹° Áß½É ¹Ù¶óº¸±â
+		glm::vec3 eye_pos = glm::vec3(115.0f, -300.0f, 25.0f); // ï¿½ï¿½ï¿½é¿¡ï¿½ï¿½
+		glm::vec3 target = glm::vec3(115.0f, 50.0f, 25.0f); // ï¿½Ç¹ï¿½ ï¿½ß½ï¿½ ï¿½Ù¶óº¸±ï¿½
 
 		ViewMatrix = glm::lookAt(eye_pos, target, glm::vec3(0.0f, 0.0f, 1.0f));
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
@@ -202,7 +202,7 @@ void Orthographic_Camera::define_camera(int win_width, int win_height, float win
 		break;
 	}
 	
-	case CAMERA_TOP: {// »ó¸éµµ
+	case CAMERA_TOP: {// ï¿½ï¿½éµµ
 		flag_valid = true;
 		flag_move = false;
 
@@ -210,7 +210,7 @@ void Orthographic_Camera::define_camera(int win_width, int win_height, float win
 		glm::vec3 target = glm::vec3(115.0f, 80.0f, 0.0f);
 
 		ViewMatrix = glm::lookAt(eye_pos, target, glm::vec3(0.0f, 1.0f, 0.0f));
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);
@@ -239,7 +239,7 @@ void Orthographic_Camera::define_camera(int win_width, int win_height, float win
 		break;
 	}
 
-	case CAMERA_SIDE: {// Ãø¸éµµ
+	case CAMERA_SIDE: {// ï¿½ï¿½ï¿½éµµ
 		flag_valid = true;
 		flag_move = false;
 
@@ -247,7 +247,7 @@ void Orthographic_Camera::define_camera(int win_width, int win_height, float win
 		glm::vec3 target = glm::vec3(200.0f, 80.0f, 25.0f);
 
 		ViewMatrix = glm::lookAt(eye_pos, target, glm::vec3(0.0f, 0.0f, 1.0f));
-		// Ä«¸Þ¶óÀÇ À§Ä¡, Ä«¸Þ¶ó°¡ ¼¼»óÀ» ¹Ù¶óº¸´Â ¹æÇâ, ¿µ»óÀÇ À§ÂÊ ¹æÇâ
+		// Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡, Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¶óº¸´ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 		cam_view.uaxis = glm::vec3(ViewMatrix[0][0], ViewMatrix[1][0], ViewMatrix[2][0]);
 		cam_view.vaxis = glm::vec3(ViewMatrix[0][1], ViewMatrix[1][1], ViewMatrix[2][1]);

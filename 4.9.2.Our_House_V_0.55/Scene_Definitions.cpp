@@ -53,14 +53,14 @@ void Axis_Object::draw_camera_axis(Shader_Simple* shader_simple,
 	glm::vec3 naxis,
 	float axis_length) {
 
-	// È¸Àü Çà·Ä ±¸¼º
+	// È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	glm::mat4 RotationMatrix = glm::mat4(1.0f);
-	RotationMatrix[0] = glm::vec4(glm::normalize(uaxis), 0.0f);    // XÃà
-	RotationMatrix[1] = glm::vec4(glm::normalize(vaxis), 0.0f);    // YÃà  
-	RotationMatrix[2] = glm::vec4(glm::normalize(-naxis), 0.0f);   // ZÃà
+	RotationMatrix[0] = glm::vec4(glm::normalize(uaxis), 0.0f);    // Xï¿½ï¿½
+	RotationMatrix[1] = glm::vec4(glm::normalize(vaxis), 0.0f);    // Yï¿½ï¿½  
+	RotationMatrix[2] = glm::vec4(glm::normalize(-naxis), 0.0f);   // Zï¿½ï¿½
 	RotationMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// º¯È¯ Çà·Ä Á¶ÇÕ: T * R * S
+	// ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: T * R * S
 	glm::mat4 ScaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(axis_length));
 	glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0f), position);
 	glm::mat4 ModelMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
@@ -84,7 +84,7 @@ void Axis_Object::draw_camera_axis(Shader_Simple* shader_simple,
 void Scene::draw_camera_frames() {
 	if (!show_camera_frames) return;
 
-	static bool debug_printed = false;  // Á¤Àû º¯¼ö·Î ÇÑ ¹ø¸¸ Ãâ·Â
+	static bool debug_printed = false;  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 
 	Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[SHADER_SIMPLE]].get());
 
@@ -92,7 +92,7 @@ void Scene::draw_camera_frames() {
 		const Camera& cam = camera_ref.get();
 		if (!cam.flag_valid) continue;
 
-		// ÇÑ ¹ø¸¸ µð¹ö±ë Ãâ·Â
+		// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 		if (!debug_printed) {
 			printf("Camera pos: (%.2f, %.2f, %.2f)\n",
 				cam.cam_view.pos.x, cam.cam_view.pos.y, cam.cam_view.pos.z);
@@ -113,7 +113,7 @@ void Scene::draw_camera_frames() {
 			30.0f);
 	}
 
-	debug_printed = true;  // Ã¹ ¹øÂ° È£Ãâ ÈÄ ÇÃ·¡±× ¼³Á¤
+	debug_printed = true;  // Ã¹ ï¿½ï¿½Â° È£ï¿½ï¿½ ï¿½ï¿½ ï¿½Ã·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 }
 
 void Scene::clock(int clock_id) { // currently one clock
@@ -198,6 +198,14 @@ void Scene::build_shader_list() {
 	shader_data.shader_simple.prepare_shader();
 	shader_ID_mapper[SHADER_SIMPLE] = shader_list.size();
 	shader_list.push_back(shader_data.shader_simple);
+
+	shader_data.shader_gouraud.prepare_shader();
+	shader_ID_mapper[SHADER_GOURAUD] = shader_list.size();
+	shader_list.push_back(shader_data.shader_gouraud);
+
+	shader_data.shader_phong.prepare_shader();
+	shader_ID_mapper[SHADER_PHONG] = shader_list.size();
+	shader_list.push_back(shader_data.shader_phong);
 }
 
 void Scene::initialize() {
@@ -212,6 +220,11 @@ void Scene::draw_static_world() {
 	glm::mat4 ModelViewProjectionMatrix;
 	for (auto static_object = static_objects.begin(); static_object != static_objects.end(); static_object++) {
 		if (static_object->get().flag_valid == false) continue;
+		/*
+		SHADER_ID shader = shader_kind;
+		if (static_object->get().object_id == STATIC_OBJECT_IRON_MAN)
+			shader = ironman_shader_mode;
+		*/
 		static_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list);
 	}
 }

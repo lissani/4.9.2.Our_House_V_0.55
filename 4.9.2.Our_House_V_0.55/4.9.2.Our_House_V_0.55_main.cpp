@@ -13,19 +13,19 @@ static int original_main_camera_index = 0;
 static bool cctv_control_mode = false;
 
 void move_main_camera(int axis, float amount) {
-	if (main_camera_index == 4) { // cctv ¸ğµå¿¡¼­´Â »ç¿ë ±İÁö
+	if (main_camera_index == 4) { // cctv ï¿½ï¿½å¿¡ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		return;
 	}
 	Camera& cam = scene.camera_list[main_camera_index].get();
 
 	glm::vec3 delta(0.0f);
-	if (axis == 0) {        // UÃà (Ä«¸Ş¶ó ¿À¸¥ÂÊ)
+	if (axis == 0) {        // Uï¿½ï¿½ (Ä«ï¿½Ş¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
 		delta = cam.cam_view.uaxis * amount;
 	}
-	else if (axis == 1) {   // VÃà (Ä«¸Ş¶ó À§ÂÊ)
+	else if (axis == 1) {   // Vï¿½ï¿½ (Ä«ï¿½Ş¶ï¿½ ï¿½ï¿½ï¿½ï¿½)
 		delta = cam.cam_view.vaxis * amount;
 	}
-	else if (axis == 2) {   // NÃà (Ä«¸Ş¶ó µÚÂÊ, ¾ÕÀ¸·Î °¡·Á¸é À½¼ö)
+	else if (axis == 2) {   // Nï¿½ï¿½ (Ä«ï¿½Ş¶ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 		delta = cam.cam_view.naxis * amount;
 	}
 	cam.cam_view.pos += delta;
@@ -50,11 +50,11 @@ void zoom_main_camera(float zoom_factor) {
 	Camera& cam = scene.camera_list[main_camera_index].get();
 	float& fovy = cam.cam_proj.params.pers.fovy;
 	
-	// fov ¹üÀ§ Á¦ÇÑ
+	// fov ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (main_camera_index == 4) {  // CCTV
 		fovy = glm::clamp(fovy * zoom_factor, 15.0f * TO_RADIAN, 90.0f * TO_RADIAN);
 	}
-	else {  // ÀÏ¹İ Ä«¸Ş¶ó
+	else {  // ï¿½Ï¹ï¿½ Ä«ï¿½Ş¶ï¿½
 		fovy = glm::clamp(fovy * zoom_factor, 10.0f * TO_RADIAN, 120.0f * TO_RADIAN);
 	}
 
@@ -134,7 +134,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'v':
 		cctv_control_mode = !cctv_control_mode;
 		if (cctv_control_mode) {
-			original_main_camera_index = main_camera_index; // ÇöÀç Ä«¸Ş¶ó ÀúÀå
+			original_main_camera_index = main_camera_index; // ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Ş¶ï¿½ ï¿½ï¿½ï¿½ï¿½
 			main_camera_index = 4;
 			printf("cctv control mode on - rotate/zoom only\n");
 		}
@@ -148,7 +148,7 @@ void keyboard(unsigned char key, int x, int y) {
 		printf("mode: %s\n", rotation_mode ? "rotation" : "movement");
 		break;
 
-		// ³»°¡ Á¤ÀÇÇÑ keyborad ÀÔ·Â
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ keyborad ï¿½Ô·ï¿½
 	case 'q':
 		if (rotation_mode)
 			rotate_main_camera(0, -1.0f * TO_RADIAN);
@@ -189,6 +189,24 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'x':
 		scene.show_camera_frames = !scene.show_camera_frames;
 		printf("Camera frame display: %s\n", scene.show_camera_frames ? "ON" : "OFF");
+		glutPostRedisplay();
+		break;
+
+	case '1': 
+		scene.shader_kind = SHADER_GOURAUD;
+		printf("Gouraud shading\n");
+		glutPostRedisplay();
+		break;
+
+	case '2': 
+		scene.shader_kind = SHADER_PHONG;
+		printf("Phong shading\n");
+		glutPostRedisplay();
+		break;
+
+	case '0':  // Simple ì‰ì´ë”ë¡œ ë˜ëŒë¦¬ê¸° ìœ„í•œ í‚¤ ì¶”ê°€
+		scene.shader_kind = SHADER_SIMPLE;
+		printf("Simple shading\n");
 		glutPostRedisplay();
 		break;
 	}

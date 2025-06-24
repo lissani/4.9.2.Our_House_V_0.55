@@ -488,7 +488,7 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
     for (int i = 0; i < cur_object.instances.size(); i++) {
         glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix * cur_object.instances[i].ModelMatrix;
         switch (shader_kind) {
-        case SHADER_SIMPLE:
+        case SHADER_SIMPLE: {
             Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[shader_kind]].get());
             glUseProgram(shader_simple_ptr->h_ShaderProgram);
             glUniformMatrix4fv(shader_simple_ptr->loc_ModelViewProjectionMatrix, 1, GL_FALSE,
@@ -496,6 +496,67 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             glUniform3f(shader_simple_ptr->loc_primitive_color, cur_object.instances[i].material.diffuse.r,
                 cur_object.instances[i].material.diffuse.g, cur_object.instances[i].material.diffuse.b);
             break;
+        }
+        case SHADER_GOURAUD: {
+            auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+            glUseProgram(shader->h_ShaderProgram);
+
+            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
+            glm::mat4 MV = ViewMatrix * FinalModelMatrix;
+            glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+            glm::mat4 MVP = ProjectionMatrix * MV;
+
+            // 라이트 위치 (월드 좌표계)
+            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+            glm::vec3 view_position_view = glm::vec3(0.0f);
+
+            // 유니폼 변수 설정
+            glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+            glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+            // 머티리얼 속성 설정
+            Material& m = cur_object.instances[i].material;
+            glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+            glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+            glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+            glUniform1f(shader->loc_material_shininess, m.exponent);
+            break;
+        }
+        case SHADER_PHONG: {
+            auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+            glUseProgram(shader->h_ShaderProgram);
+
+            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
+            glm::mat4 MV = ViewMatrix * FinalModelMatrix;
+            glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+            glm::mat4 MVP = ProjectionMatrix * MV;
+
+            // 라이트 위치 (월드 좌표계)
+            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+            glm::vec3 view_position_view = glm::vec3(0.0f);
+
+            // 유니폼 변수 설정
+            glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+            glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+            // 머티리얼 속성 설정
+            Material& m = cur_object.instances[i].material;
+            glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+            glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+            glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+            glUniform1f(shader->loc_material_shininess, m.exponent);
+            break;
+        }
         }
         glBindVertexArray(cur_object.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3 * cur_object.n_triangles);
