@@ -1,12 +1,130 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "Scene_Definitions.h"
+
+// 동적 객체용 조명 설정 헬퍼 함수들
+void set_lighting_uniforms_dynamic_gouraud(Shader_Gouraud* shader, glm::mat4& ViewMatrix, glm::mat4& ModelMatrix, Scene& scene, bool is_spider = false) {
+    // 세상좌표계 광원 (World Light)
+    glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+    glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+    glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+    glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+    // 눈좌표계 광원 (View Light)
+    glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+    glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+    glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+    glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+    // 모델좌표계 광원 (거미의 경우만 활성화)
+    if (is_spider && scene.model_light_enabled) {
+        // 모델좌표계의 광원을 눈좌표계로 변환
+        glm::mat4 MV = ViewMatrix * ModelMatrix;
+        glm::vec3 model_light_view = glm::vec3(MV * glm::vec4(scene.model_light.position, 1.0f));
+        glUniform3fv(shader->loc_model_light_position, 1, &model_light_view[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 1);
+    }
+    else {
+        glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 0);
+    }
+}
+
+void set_lighting_uniforms_dynamic_phong(Shader_Phong* shader, glm::mat4& ViewMatrix, glm::mat4& ModelMatrix, Scene& scene, bool is_spider = false) {
+    // 세상좌표계 광원 (World Light)
+    glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+    glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+    glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+    glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+    // 눈좌표계 광원 (View Light)
+    glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+    glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+    glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+    glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+    // 모델좌표계 광원 (거미의 경우만 활성화)
+    if (is_spider && scene.model_light_enabled) {
+        // 모델좌표계의 광원을 눈좌표계로 변환
+        glm::mat4 MV = ViewMatrix * ModelMatrix;
+        glm::vec3 model_light_view = glm::vec3(MV * glm::vec4(scene.model_light.position, 1.0f));
+        glUniform3fv(shader->loc_model_light_position, 1, &model_light_view[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 1);
+    }
+    else {
+        glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 0);
+    }
+}
+
+void set_lighting_uniforms_dynamic_gouraud_texture(Shader_Gouraud_Texture* shader, glm::mat4& ViewMatrix, glm::mat4& ModelMatrix, Scene& scene, bool is_spider = false) {
+    // 세상좌표계 광원 (World Light)
+    glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+    glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+    glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+    glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+    // 눈좌표계 광원 (View Light)
+    glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+    glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+    glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+    glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+    // 모델좌표계 광원 (거미의 경우만 활성화)
+    if (is_spider && scene.model_light_enabled) {
+        // 모델좌표계의 광원을 눈좌표계로 변환
+        glm::mat4 MV = ViewMatrix * ModelMatrix;
+        glm::vec3 model_light_view = glm::vec3(MV * glm::vec4(scene.model_light.position, 1.0f));
+        glUniform3fv(shader->loc_model_light_position, 1, &model_light_view[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 1);
+    }
+    else {
+        glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 0);
+    }
+}
+
+void set_lighting_uniforms_dynamic_phong_texture(Shader_Phong_Texture* shader, glm::mat4& ViewMatrix, glm::mat4& ModelMatrix, Scene& scene, bool is_spider = false) {
+    // 세상좌표계 광원 (World Light)
+    glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+    glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+    glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+    glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+    // 눈좌표계 광원 (View Light)
+    glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+    glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+    glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+    glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+    // 모델좌표계 광원 (거미의 경우만 활성화)
+    if (is_spider && scene.model_light_enabled) {
+        // 모델좌표계의 광원을 눈좌표계로 변환
+        glm::mat4 MV = ViewMatrix * ModelMatrix;
+        glm::vec3 model_light_view = glm::vec3(MV * glm::vec4(scene.model_light.position, 1.0f));
+        glUniform3fv(shader->loc_model_light_position, 1, &model_light_view[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 1);
+    }
+    else {
+        glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+        glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+        glUniform1i(shader->loc_model_light_enabled, 0);
+    }
+}
+
+// PathFollower와 관련 클래스들은 그대로 유지
 enum class PathType {
     Wolf,
     Spider
 };
 
-// ��� ����Ʈ
 struct PathPoint {
     glm::vec3 position;
     float rotation;
@@ -17,12 +135,12 @@ struct PathPoint {
 struct CurveSegment {
     glm::vec3 start_pos;
     glm::vec3 end_pos;
-    glm::vec3 center;     // ��ȣ�� �߽���
-    float start_angle;    // ���� ����
-    float end_angle;      // �� ����
-    float radius;         // ������
-    bool is_curve;        // ����� ��������
-    bool is_valid;        // ��ȿ�� �����
+    glm::vec3 center;
+    float start_angle;
+    float end_angle;
+    float radius;
+    bool is_curve;
+    bool is_valid;
 };
 
 class PathFollower {
@@ -37,14 +155,14 @@ private:
     bool loop_path;
     float segment_progress;
 
-    bool ping_pong_mode;     // ���� ��� Ȱ��ȭ
-    bool moving_forward;     // ������ �̵� ������
-    std::vector<CurveSegment> reverse_segments; // ������ ���׸�Ʈ��
+    bool ping_pong_mode;
+    bool moving_forward;
+    std::vector<CurveSegment> reverse_segments;
 
 public:
     PathFollower(PathType type) : path_type(type), current_segment(0), movement_speed(0.075f),
         current_rotation(0.0f), loop_path(true), segment_progress(0.0f),
-        ping_pong_mode(true), moving_forward(true) {  // ���� ��� �⺻ Ȱ��ȭ
+        ping_pong_mode(true), moving_forward(true) {
     }
 
     void setup_path() {
@@ -75,7 +193,7 @@ public:
         path_points.push_back({ glm::vec3(150.0f, 148.0f, 0.0f) + offset, 0.0f, false, 0.0f });
 
         calculate_curve_segments();
-        calculate_reverse_segments(); // ������ ���׸�Ʈ ���
+        calculate_reverse_segments();
 
         current_segment = 0;
         current_position = path_points[0].position;
@@ -94,9 +212,9 @@ public:
         auto offset = glm::vec3(0.0f, 0.0f, 0.0f);
         path_points.push_back({ glm::vec3(40.0f, 85.0f, 0.0f) + offset, 0.0f, false, 0.0f });
         path_points.push_back({ glm::vec3(110.0f, 85.0f, 0.0f) + offset, 0.0f, false, 0.0f });
-     
+
         calculate_curve_segments();
-        calculate_reverse_segments(); // ������ ���׸�Ʈ ���
+        calculate_reverse_segments();
 
         current_segment = 0;
         current_position = path_points[0].position;
@@ -111,22 +229,18 @@ public:
     void calculate_reverse_segments() {
         reverse_segments.clear();
 
-        // ������ ���׸�Ʈ�� �������� ������
         for (int i = curve_segments.size() - 1; i >= 0; i--) {
             CurveSegment reverse_segment = curve_segments[i];
 
-            // �������� ���� ������ ��ü
             glm::vec3 temp_pos = reverse_segment.start_pos;
             reverse_segment.start_pos = reverse_segment.end_pos;
             reverse_segment.end_pos = temp_pos;
 
             if (reverse_segment.is_curve && reverse_segment.is_valid) {
-                // ��� ��� ������ ������ ������
                 float temp_angle = reverse_segment.start_angle;
                 reverse_segment.start_angle = reverse_segment.end_angle;
                 reverse_segment.end_angle = temp_angle;
 
-                // �߿�: ���� ���⵵ �������Ѿ� ��
                 if (reverse_segment.start_angle > reverse_segment.end_angle) {
                     if (reverse_segment.start_angle - reverse_segment.end_angle > glm::pi<float>()) {
                         reverse_segment.end_angle += 2.0f * glm::pi<float>();
@@ -194,26 +308,19 @@ public:
 
         if (active_segments.empty()) return;
 
-        // ��� �Ϸ� Ȯ��
         if (current_segment >= active_segments.size()) {
             if (ping_pong_mode) {
-                // ���� ���: ���� ��ȯ
                 moving_forward = !moving_forward;
                 current_segment = 0;
                 segment_progress = 0.0f;
 
-                // ���ο� ������ ���׸�Ʈ �迭 ������Ʈ
                 active_segments = moving_forward ? curve_segments : reverse_segments;
-
-                // ���Ӽ� ����: ���� ��ġ�� �״�� ����
-                // ���⸸ �ٲ�� ��ġ�� ���������� �̾���
 
                 printf("Direction changed: %s (pos: %.1f, %.1f)\n",
                     moving_forward ? "Forward" : "Backward",
                     current_position.x, current_position.y);
             }
             else if (loop_path) {
-                // ���� ���� ���
                 current_segment = 0;
                 current_position = path_points[0].position;
                 current_rotation = path_points[0].rotation;
@@ -222,7 +329,7 @@ public:
             else {
                 return;
             }
-            return; // ���� ��ȯ �� �̹� �������� �ǳʶٱ�
+            return;
         }
 
         CurveSegment& segment = active_segments[current_segment];
@@ -234,7 +341,6 @@ public:
             move_along_line(segment);
         }
 
-        // ���׸�Ʈ �Ϸ� Ȯ��
         if (segment_progress >= 1.0f) {
             current_position = segment.end_pos;
             current_segment++;
@@ -295,11 +401,10 @@ public:
         }
     }
 
-    // ��� ���� �Լ��� (���� �߰�)
     void set_ping_pong_mode(bool enable) {
         ping_pong_mode = enable;
         if (!enable) {
-            moving_forward = true; // ���� ��� ��� ���������� ����
+            moving_forward = true;
         }
     }
 
@@ -404,7 +509,6 @@ public:
 PathFollowingWolf path_following_wolf;
 PathFollowingSpider path_following_spider;
 
-///////////////
 void Wolf_D::define_object() {
 #define N_WOLF_FRAMES 17
     glm::mat4* cur_MM;
@@ -476,7 +580,7 @@ void Spider_D::define_object() {
 }
 
 void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
-    std::vector<std::reference_wrapper<Shader>>& shader_list, int time_stamp) {
+    std::vector<std::reference_wrapper<Shader>>& shader_list, int time_stamp, Scene& scene) {
     int cur_object_index = time_stamp % object_frames.size();
     Static_Object& cur_object = object_frames[cur_object_index];
     glFrontFace(cur_object.front_face_mode);
@@ -484,6 +588,7 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
     float rotation_angle = 0.0f;
     glm::mat4 ModelMatrix = glm::mat4(1.0f);
 
+    // 객체별 움직임 매트릭스 가져오기
     switch (object_id) {
     case DYNAMIC_OBJECT_WOLF:
         ModelMatrix = path_following_wolf.get_movement_matrix(time_stamp);
@@ -493,14 +598,18 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
         break;
     }
 
+    // 거미인지 확인
+    bool is_spider = (object_id == DYNAMIC_OBJECT_SPIDER);
+
     for (int i = 0; i < cur_object.instances.size(); i++) {
-        glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix * cur_object.instances[i].ModelMatrix;
-        
+        glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
+        glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * FinalModelMatrix;
+
         SHADER_ID actual_shader = shader_kind;
         if (cur_object.force_texture_shader && cur_object.instances[i].use_texture && cur_object.instances[i].texture_id != 0) {
             actual_shader = SHADER_PHONG_TEXTURE;  // 텍스처 쉐이더 강제 사용
         }
-        
+
         switch (actual_shader) {
         case SHADER_SIMPLE: {
             Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[shader_kind]].get());
@@ -515,23 +624,17 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[shader_kind]].get());
             glUseProgram(shader->h_ShaderProgram);
 
-            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
             glm::mat4 MV = ViewMatrix * FinalModelMatrix;
             glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
             glm::mat4 MVP = ProjectionMatrix * MV;
 
-            // 라이트 위치 (월드 좌표계)
-            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-            glm::vec3 view_position_view = glm::vec3(0.0f);
-
-            // 유니폼 변수 설정
+            // 매트릭스 설정
             glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
             glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+            // 다중 조명 설정 (거미의 경우 모델 광원도 활성화)
+            set_lighting_uniforms_dynamic_gouraud(shader, ViewMatrix, FinalModelMatrix, scene, is_spider);
 
             // 머티리얼 속성 설정
             Material& m = cur_object.instances[i].material;
@@ -545,23 +648,17 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[shader_kind]].get());
             glUseProgram(shader->h_ShaderProgram);
 
-            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
             glm::mat4 MV = ViewMatrix * FinalModelMatrix;
             glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
             glm::mat4 MVP = ProjectionMatrix * MV;
 
-            // 라이트 위치 (월드 좌표계)
-            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-            glm::vec3 view_position_view = glm::vec3(0.0f);
-
-            // 유니폼 변수 설정
+            // 매트릭스 설정
             glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
             glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+            // 다중 조명 설정 (거미의 경우 모델 광원도 활성화)
+            set_lighting_uniforms_dynamic_phong(shader, ViewMatrix, FinalModelMatrix, scene, is_spider);
 
             // 머티리얼 속성 설정
             Material& m = cur_object.instances[i].material;
@@ -575,21 +672,16 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             auto* shader = static_cast<Shader_Gouraud_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
             glUseProgram(shader->h_ShaderProgram);
 
-            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
             glm::mat4 MV = ViewMatrix * FinalModelMatrix;
             glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
             glm::mat4 MVP = ProjectionMatrix * MV;
-
-            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-            glm::vec3 view_position_view = glm::vec3(0.0f);
 
             glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
             glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+            // 다중 조명 설정
+            set_lighting_uniforms_dynamic_gouraud_texture(shader, ViewMatrix, FinalModelMatrix, scene, is_spider);
 
             Material& m = cur_object.instances[i].material;
             glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
@@ -613,21 +705,16 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             auto* shader = static_cast<Shader_Phong_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
             glUseProgram(shader->h_ShaderProgram);
 
-            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
             glm::mat4 MV = ViewMatrix * FinalModelMatrix;
             glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
             glm::mat4 MVP = ProjectionMatrix * MV;
-
-            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-            glm::vec3 view_position_view = glm::vec3(0.0f);
 
             glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
             glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+            // 다중 조명 설정
+            set_lighting_uniforms_dynamic_phong_texture(shader, ViewMatrix, FinalModelMatrix, scene, is_spider);
 
             Material& m = cur_object.instances[i].material;
             glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);

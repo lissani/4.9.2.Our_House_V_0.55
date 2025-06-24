@@ -1,31 +1,66 @@
-#version 330 core
+#version 400
 
-in vec3 v_pos_eye;
-in vec3 v_normal_eye;
+// 버텍스 쉐이더에서 받은 입력
+in vec3 v_position_view;
+in vec3 v_normal_view;
+in vec2 v_texcoord_out;
 
-uniform vec3 u_light_position;
-uniform vec3 u_view_position;
+// 다중 조명
+struct Light {
+    vec3 position;
+    vec3 color;
+    bool enabled;
+};
 
+uniform Light u_world_light;
+uniform Light u_view_light;
+uniform Light u_model_light;
+
+// 머티리얼
 uniform vec4 u_material_ambient;
 uniform vec4 u_material_diffuse;
 uniform vec4 u_material_specular;
 uniform float u_material_shininess;
 
-out vec4 frag_color;
+// 출력
+out vec4 final_color;
 
-void main() {
-    vec3 normal = normalize(v_normal_eye);
-    vec3 light_dir = normalize(u_light_position - v_pos_eye);
-    vec3 view_dir = normalize(u_view_position - v_pos_eye);
-    vec3 reflect_dir = reflect(-light_dir, normal);
-
-    float diff = max(dot(normal, light_dir), 0.0);
+vec3 calculateLighting(vec3 position_view, vec3 normal_view, Light light) {
+    if (!light.enabled) return vec3(0.0);
+    
+    vec3 light_dir = normalize(light.position - position_view);
+    vec3 view_dir = normalize(-position_view);
+    vec3 reflect_dir = reflect(-light_dir, normal_view);
+    
+    // Ambient
+    vec3 ambient = u_material_ambient.rgb * light.color;
+    
+    // Diffuse
+    float diff = max(dot(normal_view, light_dir), 0.0);
+    vec3 diffuse = diff * u_material_diffuse.rgb * light.color;
+    
+    // Specular
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), u_material_shininess);
+    vec3 specular = spec * u_material_specular.rgb * light.color;
+    
+    return ambient + diffuse + specular;
+}
 
-    vec3 ambient = u_material_ambient.rgb;
-    vec3 diffuse = u_material_diffuse.rgb * diff;
-    vec3 specular = u_material_specular.rgb * spec;
-
-    vec3 result = ambient + diffuse + specular;
-    frag_color = vec4(result, 1.0);
+void main(void) {
+    vec3 normal = normalize(v_normal_view);
+    
+    // 각 광원별 조명 계산
+    vec3 total_lighting = vec3(0.0);
+    
+    // 세상좌표계 광원
+    total_lighting += calculateLighting(v_position_view, normal, u_world_light);
+    
+    // 눈좌표계 광원
+    total_lighting += calculateLighting(v_position_view, normal, u_view_light);
+    
+    // 모델좌표계 광원
+    total_lighting += calculateLighting(v_position_view, normal, u_model_light);
+    
+    // 최종 색상
+    final_color = vec4(clamp(total_lighting, 0.0, 1.0), u_material_diffuse.a);
 }

@@ -47,12 +47,12 @@ struct Camera {
 	bool flag_move; // what else?
 };
 
-struct Perspective_Camera : public Camera { // �� camera, cctv camera
+struct Perspective_Camera : public Camera { 
 	Perspective_Camera(Camera_ID _camera_id) : Camera(_camera_id) {}
 	void define_camera(int win_width, int win_height, float win_aspect_ratio);
 };
 
-struct Orthographic_Camera : public Camera { // ��鵵, ��鵵 ...
+struct Orthographic_Camera : public Camera { 
 	Orthographic_Camera(Camera_ID _camera_id) : Camera(_camera_id) {}
 	void define_camera(int win_width, int win_height, float win_aspect_ratio);
 };

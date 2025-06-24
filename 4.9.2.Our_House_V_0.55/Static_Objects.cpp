@@ -2,10 +2,85 @@
 
 #include "Scene_Definitions.h"
 
+void set_lighting_uniforms_gouraud(Shader_Gouraud* shader, glm::mat4& ViewMatrix, Scene& scene) {
+	// 세상좌표계 광원 (World Light)
+	glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+	glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+	glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+	glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+	// 눈좌표계 광원 (View Light) - 이미 눈좌표계에 있으므로 변환 불필요
+	glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+	glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+	glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+	glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+	// 모델좌표계 광원 (정적 객체는 사용 안함)
+	glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+	glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+	glUniform1i(shader->loc_model_light_enabled, 0); // 정적 객체는 모델 광원 없음
+}
+
+void set_lighting_uniforms_phong(Shader_Phong* shader, glm::mat4& ViewMatrix, Scene& scene) {
+	// 세상좌표계 광원 (World Light)
+	glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+	glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+	glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+	glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+	// 눈좌표계 광원 (View Light)
+	glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+	glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+	glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+	glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+	// 모델좌표계 광원
+	glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+	glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+	glUniform1i(shader->loc_model_light_enabled, 0); // 정적 객체는 모델 광원 없음
+}
+
+void set_lighting_uniforms_gouraud_texture(Shader_Gouraud_Texture* shader, glm::mat4& ViewMatrix, Scene& scene) {
+	// 세상좌표계 광원 (World Light)
+	glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+	glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+	glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+	glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+	// 눈좌표계 광원 (View Light)
+	glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+	glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+	glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+	glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+	// 모델좌표계 광원
+	glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+	glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+	glUniform1i(shader->loc_model_light_enabled, 0); // 정적 객체는 모델 광원 없음
+}
+
+void set_lighting_uniforms_phong_texture(Shader_Phong_Texture* shader, glm::mat4& ViewMatrix, Scene& scene) {
+	// 세상좌표계 광원 (World Light)
+	glm::vec3 world_light_view = glm::vec3(ViewMatrix * glm::vec4(scene.world_light.position, 1.0f));
+	glUniform3fv(shader->loc_world_light_position, 1, &world_light_view[0]);
+	glUniform3fv(shader->loc_world_light_color, 1, &scene.world_light.color[0]);
+	glUniform1i(shader->loc_world_light_enabled, scene.world_light_enabled ? 1 : 0);
+
+	// 눈좌표계 광원 (View Light)
+	glm::vec3 view_light_position_eye = glm::vec3(0.0f, 0.0f, -50.0f); // 카메라 앞쪽
+	glUniform3fv(shader->loc_view_light_position, 1, &view_light_position_eye[0]);
+	glUniform3fv(shader->loc_view_light_color, 1, &scene.view_light.color[0]);
+	glUniform1i(shader->loc_view_light_enabled, scene.view_light_enabled ? 1 : 0);
+
+	// 모델좌표계 광원
+	glUniform3fv(shader->loc_model_light_position, 1, &scene.model_light.position[0]);
+	glUniform3fv(shader->loc_model_light_color, 1, &scene.model_light.color[0]);
+	glUniform1i(shader->loc_model_light_enabled, 0); // 정적 객체는 모델 광원 없음
+}
+
 void Static_Object::read_geometry(int bytes_per_primitive) {
 	FILE* fp;
 
-	// fprintf(stdout, "Reading geometry from the geometry file %s...\n", filename);
 	fp = fopen(filename, "rb");
 	if (fp == NULL) {
 		fprintf(stderr, "Error: cannot open the object file %s ...\n", filename);
@@ -17,8 +92,7 @@ void Static_Object::read_geometry(int bytes_per_primitive) {
 		fprintf(stderr, "Error: cannot allocate memory for the geometry file %s ...\n", filename);
 		exit(EXIT_FAILURE);
 	}
-	fread(vertices, bytes_per_primitive, n_triangles, fp); // assume the data file has no faults.
-	// fprintf(stdout, "Read %d primitives successfully.\n\n", n_triangles);
+	fread(vertices, bytes_per_primitive, n_triangles, fp);
 	fclose(fp);
 }
 
@@ -26,20 +100,17 @@ void Static_Object::prepare_geom_of_static_object() {
 	int i, n_bytes_per_vertex, n_bytes_per_triangle;
 	char filename[512];
 
-	n_bytes_per_vertex = n_fields * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_vertex = n_fields * sizeof(float);
 	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
 
 	read_geometry(n_bytes_per_triangle);
 
-	// Initialize vertex buffer object.
 	glGenBuffers(1, &VBO);
-
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, n_triangles * n_bytes_per_triangle, vertices, GL_STATIC_DRAW);
 
 	free(vertices);
 
-	// Initialize vertex array object.
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
@@ -78,9 +149,8 @@ void Building::define_object() {
 	cur_material->exponent = 128.0f * 0.1f;
 }
 
-/// my static objects
 void Ant::define_object() {
-	glm::mat4* cur_MM; // �𵨸� ��ȯ
+	glm::mat4* cur_MM;
 	Material* cur_material;
 	strcpy(filename, "Data/static_objects/ant_vnt.geom");
 	n_fields = 8;
@@ -123,14 +193,13 @@ void Wood_Tower::define_object() {
 	cur_material->diffuse = glm::vec4(0.4f, 0.6f, 0.3f, 1.0f);
 	cur_material->specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	cur_material->exponent = 15.0f;
-	
+
 	GLuint texture_id = texture_manager.load_texture("Data/static_objects/Wood_Tower_Col.jpg");
 
 	for (int i = 0; i < instances.size(); i++) {
 		instances[i].texture_id = texture_id;
 		instances[i].use_texture = true;
 	}
-	
 }
 
 void Cat::define_object() {
@@ -153,7 +222,7 @@ void Cat::define_object() {
 	cur_material->ambient = glm::vec4(0.05f, 0.05f, 0.0f, 1.0f);
 	cur_material->diffuse = glm::vec4(0.5f, 0.5f, 0.4f, 1.0f);
 	cur_material->specular = glm::vec4(0.7f, 0.7f, 0.04f, 1.0f);
-	cur_material->exponent = 128.0f * 0.078125f;;
+	cur_material->exponent = 128.0f * 0.078125f;
 }
 
 void Iron_Man::define_object() {
@@ -201,15 +270,8 @@ void Bike::define_object() {
 	cur_material->exponent = 0.21794872f * 0.6f;
 }
 
-void print_mat4(const char* string, glm::mat4 M) {
-	fprintf(stdout, "\n***** %s ******\n", string);
-	for (int i = 0; i < 4; i++)
-		fprintf(stdout, "*** COL[%d] (%f, %f, %f, %f)\n", i, M[i].x, M[i].y, M[i].z, M[i].w);
-	fprintf(stdout, "**************\n\n");
-}
-
 void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
-	std::vector<std::reference_wrapper<Shader>>& shader_list) {
+	std::vector<std::reference_wrapper<Shader>>& shader_list, Scene& scene) {
 	glm::mat4 ModelViewProjectionMatrix;
 	glFrontFace(front_face_mode);
 
@@ -220,9 +282,9 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 
 		// Wood Tower는 항상 Phong Texture 쉐이더 사용
 		if (force_texture_shader && instances[i].use_texture && instances[i].texture_id != 0) {
-			actual_shader = SHADER_PHONG_TEXTURE;  // 키보드 입력에 상관없이 항상 Phong Texture
+			actual_shader = SHADER_PHONG_TEXTURE;
 		}
-		
+
 		switch (actual_shader) {
 		case SHADER_SIMPLE: {
 			Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[actual_shader]].get());
@@ -242,16 +304,12 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
 			glm::mat4 MVP = ProjectionMatrix * MV;
 
-			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-			glm::vec3 view_position_view = glm::vec3(0.0f);
-
 			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
 			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
 			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+			// 다중 조명 설정
+			set_lighting_uniforms_gouraud(shader, ViewMatrix, scene);
 
 			Material& m = instances[i].material;
 			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
@@ -269,16 +327,12 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
 			glm::mat4 MVP = ProjectionMatrix * MV;
 
-			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-			glm::vec3 view_position_view = glm::vec3(0.0f);
-
 			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
 			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
 			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+			// 다중 조명 설정
+			set_lighting_uniforms_phong(shader, ViewMatrix, scene);
 
 			Material& m = instances[i].material;
 			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
@@ -296,16 +350,12 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
 			glm::mat4 MVP = ProjectionMatrix * MV;
 
-			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-			glm::vec3 view_position_view = glm::vec3(0.0f);
-
 			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
 			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
 			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+			// 다중 조명 설정
+			set_lighting_uniforms_gouraud_texture(shader, ViewMatrix, scene);
 
 			Material& m = instances[i].material;
 			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
@@ -334,16 +384,12 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
 			glm::mat4 MVP = ProjectionMatrix * MV;
 
-			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
-			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
-			glm::vec3 view_position_view = glm::vec3(0.0f);
-
 			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
 			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
 			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
 
-			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
-			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+			// 다중 조명 설정
+			set_lighting_uniforms_phong_texture(shader, ViewMatrix, scene);
 
 			Material& m = instances[i].material;
 			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);

@@ -7,6 +7,8 @@ unsigned int dynamic_object_ID_mapper[N_MAX_DYNAMIC_OBJECTS];
 unsigned int camera_ID_mapper[N_MAX_CAMERAS];
 unsigned int shader_ID_mapper[N_MAX_SHADERS];
 
+extern Scene scene;
+
 void Axis_Object::define_axis() {
 	glGenBuffers(1, &VBO);
 
@@ -188,7 +190,6 @@ void Scene::create_camera_list(int win_width, int win_height, float win_aspect_r
 	camera_list.push_back(camera_data.cam_side);
 }
 
-// 수정된 build_shader_list 함수
 void Scene::build_shader_list() {
 	shader_data.shader_simple.prepare_shader();
 	shader_ID_mapper[SHADER_SIMPLE] = shader_list.size();
@@ -202,7 +203,6 @@ void Scene::build_shader_list() {
 	shader_ID_mapper[SHADER_PHONG] = shader_list.size();
 	shader_list.push_back(shader_data.shader_phong);
 
-	// 텍스처 쉐이더들도 정상적으로 추가 (std::ref 제거)
 	shader_data.shader_gouraud_texture.prepare_shader();
 	shader_ID_mapper[SHADER_GOURAUD_TEXTURE] = shader_list.size();
 	shader_list.push_back(shader_data.shader_gouraud_texture);
@@ -223,14 +223,14 @@ void Scene::initialize() {
 void Scene::draw_static_world() {
 	for (auto static_object = static_objects.begin(); static_object != static_objects.end(); static_object++) {
 		if (static_object->get().flag_valid == false) continue;
-		static_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list);
+		static_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, scene);
 	}
 }
 
 void Scene::draw_dynamic_world() {
 	for (auto dynamic_object = dynamic_objects.begin(); dynamic_object != dynamic_objects.end(); dynamic_object++) {
 		if (dynamic_object->get().flag_valid == false) continue;
-		dynamic_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, time_stamp);
+		dynamic_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, time_stamp, scene);
 	}
 }
 

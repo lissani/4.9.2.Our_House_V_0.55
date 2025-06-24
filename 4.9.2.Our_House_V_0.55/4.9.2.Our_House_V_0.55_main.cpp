@@ -12,20 +12,24 @@ int main_camera_index = 0;
 static int original_main_camera_index = 0;
 static bool cctv_control_mode = false;
 
+static bool world_light_enabled = true;   
+static bool view_light_enabled = false;   
+static bool model_light_enabled = false;   
+
 void move_main_camera(int axis, float amount) {
-	if (main_camera_index == 4) { // cctv ��忡���� ��� ����
+	if (main_camera_index == 4) { 
 		return;
 	}
 	Camera& cam = scene.camera_list[main_camera_index].get();
 
 	glm::vec3 delta(0.0f);
-	if (axis == 0) {        // U�� (ī�޶� ������)
+	if (axis == 0) {      
 		delta = cam.cam_view.uaxis * amount;
 	}
-	else if (axis == 1) {   // V�� (ī�޶� ����)
+	else if (axis == 1) {  
 		delta = cam.cam_view.vaxis * amount;
 	}
-	else if (axis == 2) {   // N�� (ī�޶� ����, ������ ������ ����)
+	else if (axis == 2) {  
 		delta = cam.cam_view.naxis * amount;
 	}
 	cam.cam_view.pos += delta;
@@ -50,11 +54,11 @@ void zoom_main_camera(float zoom_factor) {
 	Camera& cam = scene.camera_list[main_camera_index].get();
 	float& fovy = cam.cam_proj.params.pers.fovy;
 	
-	// fov ���� ����
+
 	if (main_camera_index == 4) {  // CCTV
 		fovy = glm::clamp(fovy * zoom_factor, 15.0f * TO_RADIAN, 90.0f * TO_RADIAN);
 	}
-	else {  // �Ϲ� ī�޶�
+	else { 
 		fovy = glm::clamp(fovy * zoom_factor, 10.0f * TO_RADIAN, 120.0f * TO_RADIAN);
 	}
 
@@ -70,6 +74,10 @@ void display(void) {
 			camera->get().view_port.w, camera->get().view_port.h);
 		scene.ViewMatrix = camera->get().ViewMatrix;
 		scene.ProjectionMatrix = camera->get().ProjectionMatrix;
+
+		scene.world_light_enabled = world_light_enabled;
+		scene.view_light_enabled = view_light_enabled;
+		scene.model_light_enabled = model_light_enabled;
 
 		scene.draw_world();
 	}
@@ -134,7 +142,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'v':
 		cctv_control_mode = !cctv_control_mode;
 		if (cctv_control_mode) {
-			original_main_camera_index = main_camera_index; // ���� ī�޶� ����
+			original_main_camera_index = main_camera_index;
 			main_camera_index = 4;
 			printf("cctv control mode on - rotate/zoom only\n");
 		}
@@ -148,7 +156,6 @@ void keyboard(unsigned char key, int x, int y) {
 		printf("mode: %s\n", rotation_mode ? "rotation" : "movement");
 		break;
 
-		// ���� ������ keyborad �Է�
 	case 'q':
 		if (rotation_mode)
 			rotate_main_camera(0, -1.0f * TO_RADIAN);
@@ -192,13 +199,13 @@ void keyboard(unsigned char key, int x, int y) {
 		glutPostRedisplay();
 		break;
 
-	case '1': 
+	case '1':
 		scene.shader_kind = SHADER_GOURAUD;
 		printf("Gouraud shading\n");
 		glutPostRedisplay();
 		break;
 
-	case '2': 
+	case '2':
 		scene.shader_kind = SHADER_PHONG;
 		printf("Phong shading\n");
 		glutPostRedisplay();
@@ -207,6 +214,24 @@ void keyboard(unsigned char key, int x, int y) {
 	case '0':  // Simple 쉐이더로 되돌리기 위한 키 추가
 		scene.shader_kind = SHADER_SIMPLE;
 		printf("Simple shading\n");
+		glutPostRedisplay();
+		break;
+
+	case '3':
+		world_light_enabled = !world_light_enabled;
+		printf("World coordinate light: %s\n", world_light_enabled ? "ON" : "OFF");
+		glutPostRedisplay();
+		break;
+
+	case '4':
+		view_light_enabled = !view_light_enabled;
+		printf("View coordinate light (camera-relative): %s\n", view_light_enabled ? "ON" : "OFF");
+		glutPostRedisplay();
+		break;
+
+	case '5':
+		model_light_enabled = !model_light_enabled;
+		printf("Model coordinate light (spider-relative): %s\n", model_light_enabled ? "ON" : "OFF");
 		glutPostRedisplay();
 		break;
 
@@ -219,10 +244,7 @@ void keyboard(unsigned char key, int x, int y) {
 		texture_manager.set_filter_mode(FILTER_LINEAR);
 		glutPostRedisplay();
 		break;
-
 	}
-
-
 	glutPostRedisplay();
 }
 

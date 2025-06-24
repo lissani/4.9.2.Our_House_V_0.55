@@ -58,11 +58,23 @@ struct Shader_Simple : Shader {
 	void prepare_shader();
 };
 
+// 다중 조명을 지원하는 Gouraud 쉐이더
 struct Shader_Gouraud : Shader {
 	GLint loc_ModelViewMatrix;
 	GLint loc_NormalMatrix;
-	GLint loc_light_position;
-	GLint loc_view_position;
+
+	// 다중 조명을 위한 uniform 위치들
+	GLint loc_world_light_position;
+	GLint loc_world_light_color;
+	GLint loc_world_light_enabled;
+
+	GLint loc_view_light_position;
+	GLint loc_view_light_color;
+	GLint loc_view_light_enabled;
+
+	GLint loc_model_light_position;
+	GLint loc_model_light_color;
+	GLint loc_model_light_enabled;
 
 	GLint loc_material_ambient;
 	GLint loc_material_diffuse;
@@ -71,16 +83,48 @@ struct Shader_Gouraud : Shader {
 	void prepare_shader();
 };
 
-struct Shader_Phong : Shader_Gouraud {
+// 다중 조명을 지원하는 Phong 쉐이더
+struct Shader_Phong : Shader {
+	GLint loc_ModelViewMatrix;
+	GLint loc_NormalMatrix;
+
+	// 다중 조명을 위한 uniform 위치들
+	GLint loc_world_light_position;
+	GLint loc_world_light_color;
+	GLint loc_world_light_enabled;
+
+	GLint loc_view_light_position;
+	GLint loc_view_light_color;
+	GLint loc_view_light_enabled;
+
+	GLint loc_model_light_position;
+	GLint loc_model_light_color;
+	GLint loc_model_light_enabled;
+
+	GLint loc_material_ambient;
+	GLint loc_material_diffuse;
+	GLint loc_material_specular;
+	GLint loc_material_shininess;
 	void prepare_shader();
 };
 
-// 텍스처 쉐이더들을 Scene_Definitions.h에 추가
+// 다중 조명을 지원하는 Gouraud Texture 쉐이더
 struct Shader_Gouraud_Texture : Shader {
 	GLint loc_ModelViewMatrix;
 	GLint loc_NormalMatrix;
-	GLint loc_light_position;
-	GLint loc_view_position;
+
+	// 다중 조명을 위한 uniform 위치들
+	GLint loc_world_light_position;
+	GLint loc_world_light_color;
+	GLint loc_world_light_enabled;
+
+	GLint loc_view_light_position;
+	GLint loc_view_light_color;
+	GLint loc_view_light_enabled;
+
+	GLint loc_model_light_position;
+	GLint loc_model_light_color;
+	GLint loc_model_light_enabled;
 
 	GLint loc_material_ambient;
 	GLint loc_material_diffuse;
@@ -93,11 +137,23 @@ struct Shader_Gouraud_Texture : Shader {
 	void prepare_shader() override;
 };
 
+// 다중 조명을 지원하는 Phong Texture 쉐이더
 struct Shader_Phong_Texture : Shader {
 	GLint loc_ModelViewMatrix;
 	GLint loc_NormalMatrix;
-	GLint loc_light_position;
-	GLint loc_view_position;
+
+	// 다중 조명을 위한 uniform 위치들
+	GLint loc_world_light_position;
+	GLint loc_world_light_color;
+	GLint loc_world_light_enabled;
+
+	GLint loc_view_light_position;
+	GLint loc_view_light_color;
+	GLint loc_view_light_enabled;
+
+	GLint loc_model_light_position;
+	GLint loc_model_light_color;
+	GLint loc_model_light_enabled;
 
 	GLint loc_material_ambient;
 	GLint loc_material_diffuse;
@@ -152,6 +208,9 @@ struct Axis_Object {
 		float axis_length = 30.0f);
 };
 
+// 전방 선언 (Scene 구조체를 참조하기 위해)
+struct Scene;
+
 struct Static_Object {
 	STATIC_OBJECT_ID object_id;
 	char filename[512];
@@ -171,8 +230,9 @@ struct Static_Object {
 	}
 	void read_geometry(int bytes_per_primitive);
 	void prepare_geom_of_static_object();
+	// Scene 객체를 받도록 수정
 	void draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
-		std::vector<std::reference_wrapper<Shader>>& shader_list);
+		std::vector<std::reference_wrapper<Shader>>& shader_list, Scene& scene);
 };
 
 struct Building : public Static_Object {
@@ -224,8 +284,9 @@ struct Dynamic_Object {
 		object_frames.clear();
 	}
 
+	// Scene 객체를 받도록 수정
 	void draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
-		std::vector<std::reference_wrapper<Shader>>& shader_list, int time_stamp);
+		std::vector<std::reference_wrapper<Shader>>& shader_list, int time_stamp, Scene& scene);
 };
 
 struct Wolf_D : public Dynamic_Object {
@@ -246,6 +307,19 @@ struct Dynamic_Geometry_Data {
 struct Window {
 	int width, height;
 	float aspect_ratio;
+};
+
+// 조명 정보 구조체
+struct LightInfo {
+	glm::vec3 position;
+	glm::vec3 color;
+	float intensity;
+	bool enabled;
+
+	LightInfo() : position(0.0f), color(1.0f), intensity(1.0f), enabled(false) {}
+	LightInfo(glm::vec3 pos, glm::vec3 col, float inten)
+		: position(pos), color(col), intensity(inten), enabled(true) {
+	}
 };
 
 struct Scene {
@@ -270,6 +344,15 @@ struct Scene {
 
 	bool show_camera_frames = false;
 
+	// 조명 시스템
+	bool world_light_enabled = true;   // 세상좌표계 광원
+	bool view_light_enabled = false;   // 눈좌표계 광원
+	bool model_light_enabled = false;  // 모델좌표계 광원
+
+	LightInfo world_light;    // 세상좌표계 기준 광원
+	LightInfo view_light;     // 눈좌표계 기준 광원
+	LightInfo model_light;    // 모델좌표계 기준 광원
+
 	Axis_Object axis_object;
 
 	Scene() {
@@ -278,6 +361,11 @@ struct Scene {
 		shader_list.clear();
 		shader_kind = SHADER_SIMPLE;
 		ViewMatrix = ProjectionMatrix = glm::mat4(1.0f);
+
+		// 조명 초기화
+		world_light = LightInfo(glm::vec3(0.0f, 0.0f, 100.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+		view_light = LightInfo(glm::vec3(0.0f, 0.0f, 50.0f), glm::vec3(0.8f, 0.8f, 1.0f), 0.8f);
+		model_light = LightInfo(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(1.0f, 0.8f, 0.6f), 0.9f);
 	}
 
 	void clock(int clock_id);
