@@ -135,8 +135,12 @@
   <ItemGroup>
     <None Include="Shaders\gouraud.frag" />
     <None Include="Shaders\gouraud.vert" />
+    <None Include="Shaders\gouraud_texture.frag" />
+    <None Include="Shaders\gouraud_texture.vert" />
     <None Include="Shaders\phong.frag" />
     <None Include="Shaders\phong.vert" />
+    <None Include="Shaders\phong_texture.frag" />
+    <None Include="Shaders\phong_texture.vert" />
     <None Include="Shaders\simple.frag" />
     <None Include="Shaders\simple.vert" />
   </ItemGroup>
@@ -148,11 +152,13 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="Shaders\LoadShaders.cpp" />
     <ClCompile Include="Static_Objects.cpp" />
+    <ClCompile Include="Texture_Manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Scene_Definitions.h" />
     <ClInclude Include="Shaders\LoadShaders.h" />
+    <ClInclude Include="Texture_Manager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

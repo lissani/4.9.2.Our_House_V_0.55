@@ -8,6 +8,7 @@
 #include <vector>
 #include "Shaders/LoadShaders.h"
 #include "Camera.h"
+#include "Texture_Manager.h"
 
 #define BUFFER_OFFSET(offset) ((GLvoid *) (offset))
 #define TO_RADIAN 0.01745329252f  
@@ -31,15 +32,17 @@ enum STATIC_OBJECT_ID {
 };
 
 enum DYNAMIC_OBJECT_ID {
-	/*DYNAMIC_OBJECT_TIGER = 0, DYNAMIC_OBJECT_COW_1, DYNAMIC_OBJECT_COW_2*/
 	DYNAMIC_OBJECT_WOLF = 0, DYNAMIC_OBJECT_SPIDER
 };
 
-enum SHADER_ID { SHADER_SIMPLE = 0, SHADER_GOURAUD, SHADER_PHONG };
+enum SHADER_ID {
+	SHADER_SIMPLE = 0, SHADER_GOURAUD, SHADER_PHONG,
+	SHADER_GOURAUD_TEXTURE, SHADER_PHONG_TEXTURE, NUM_SHADERS
+};
 
 struct Shader {
 	ShaderInfo shader_info[3];
-	GLuint h_ShaderProgram; // handle to shader program
+	GLuint h_ShaderProgram;
 	GLint loc_ModelViewProjectionMatrix;
 
 	Shader() {
@@ -72,11 +75,47 @@ struct Shader_Phong : Shader_Gouraud {
 	void prepare_shader();
 };
 
+// 텍스처 쉐이더들을 Scene_Definitions.h에 추가
+struct Shader_Gouraud_Texture : Shader {
+	GLint loc_ModelViewMatrix;
+	GLint loc_NormalMatrix;
+	GLint loc_light_position;
+	GLint loc_view_position;
+
+	GLint loc_material_ambient;
+	GLint loc_material_diffuse;
+	GLint loc_material_specular;
+	GLint loc_material_shininess;
+
+	GLint loc_texture_sampler;
+	GLint loc_use_texture;
+
+	void prepare_shader() override;
+};
+
+struct Shader_Phong_Texture : Shader {
+	GLint loc_ModelViewMatrix;
+	GLint loc_NormalMatrix;
+	GLint loc_light_position;
+	GLint loc_view_position;
+
+	GLint loc_material_ambient;
+	GLint loc_material_diffuse;
+	GLint loc_material_specular;
+	GLint loc_material_shininess;
+
+	GLint loc_texture_sampler;
+	GLint loc_use_texture;
+
+	void prepare_shader() override;
+};
+
 struct Shader_Data {
 	Shader_Simple shader_simple;
 	Shader_Gouraud shader_gouraud;
 	Shader_Phong shader_phong;
-	// Shader_Phong_Texture Shader_Phong_texture;
+	Shader_Gouraud_Texture shader_gouraud_texture;
+	Shader_Phong_Texture shader_phong_texture;
 };
 
 struct Material {
@@ -87,6 +126,10 @@ struct Material {
 struct Instance {
 	glm::mat4 ModelMatrix;
 	Material material;
+	GLuint texture_id;
+	bool use_texture;
+
+	Instance() : ModelMatrix(1.0f), texture_id(0), use_texture(false) {}
 };
 
 struct Axis_Object {
@@ -96,7 +139,6 @@ struct Axis_Object {
 		{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f }
 	};
 	GLfloat axes_color[3][3] = { { 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } };
-
 
 	void define_axis();
 	void draw_axis(Shader_Simple* shader_simple, glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix);
@@ -110,31 +152,32 @@ struct Axis_Object {
 		float axis_length = 30.0f);
 };
 
-struct Static_Object { // an object that does not move
+struct Static_Object {
 	STATIC_OBJECT_ID object_id;
-	char filename[512]; // where to read geometry data
-	int n_fields; // 3/6/8 where3 floats for vertex, 3 floats for normal, and 2 floats for texcoord
+	char filename[512];
+	int n_fields;
 	int n_triangles;
-	GLfloat* vertices; // pointer to vertex array data
-	GLuint VBO, VAO; // handles to vertex buffer object and vertex array object
-	GLenum front_face_mode; // clockwise or counter-clockwise
+	GLfloat* vertices;
+	GLuint VBO, VAO;
+	GLenum front_face_mode;
 
 	std::vector<Instance> instances;
 	bool flag_valid;
+	bool force_texture_shader;
 
-	Static_Object() {}
+	Static_Object() : force_texture_shader(false) {}
 	Static_Object(STATIC_OBJECT_ID _object_id) : object_id(_object_id) {
 		instances.clear();
 	}
-	void read_geometry(int bytes_per_primitive);  
+	void read_geometry(int bytes_per_primitive);
 	void prepare_geom_of_static_object();
 	void draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
 		std::vector<std::reference_wrapper<Shader>>& shader_list);
 };
 
-struct Building : public Static_Object { 
+struct Building : public Static_Object {
 	Building(STATIC_OBJECT_ID _object_id) : Static_Object(_object_id) {}
-	void define_object(); 
+	void define_object();
 };
 
 struct Ant : public Static_Object {
@@ -171,7 +214,7 @@ struct Static_Geometry_Data {
 	Bike bike{ STATIC_OBJECT_BIKE };
 };
 
-struct Dynamic_Object { // an object that moves
+struct Dynamic_Object {
 	DYNAMIC_OBJECT_ID object_id;
 	std::vector<Static_Object> object_frames;
 	bool flag_valid;
@@ -219,9 +262,8 @@ struct Scene {
 	Shader_Data shader_data;
 	std::vector<std::reference_wrapper<Shader>> shader_list;
 	SHADER_ID shader_kind;
-	//SHADER_ID ironman_shader_mode = SHADER_GOURAUD;
 
-	Window window; // for a better code, this must be defined in another structure!
+	Window window;
 
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
@@ -250,11 +292,3 @@ struct Scene {
 	void draw_camera_frames();
 	void draw_world();
 };
-
-
-
-
-
-
-	 
- 

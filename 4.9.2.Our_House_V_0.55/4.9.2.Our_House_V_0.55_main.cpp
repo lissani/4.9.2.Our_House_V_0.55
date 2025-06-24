@@ -209,7 +209,20 @@ void keyboard(unsigned char key, int x, int y) {
 		printf("Simple shading\n");
 		glutPostRedisplay();
 		break;
+
+	case 'n': case 'N':
+		texture_manager.set_filter_mode(FILTER_NEAREST);
+		glutPostRedisplay();
+		break;
+
+	case 'l': case 'L':
+		texture_manager.set_filter_mode(FILTER_LINEAR);
+		glutPostRedisplay();
+		break;
+
 	}
+
+
 	glutPostRedisplay();
 }
 
@@ -249,6 +262,13 @@ void initialize_OpenGL(void) {
 	 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
+	FreeImage_Initialise();
+	texture_manager.set_filter_mode(FILTER_LINEAR);
+}
+
+void finalize(void) {
+	texture_manager.cleanup();
+	FreeImage_DeInitialise();
 }
 
 void initialize_renderer(void) {

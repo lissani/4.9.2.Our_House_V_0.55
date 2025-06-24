@@ -33,6 +33,18 @@
     <None Include="Shaders\phong.vert">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="Shaders\gouraud_texture.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\gouraud_texture.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\phong_texture.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\phong_texture.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="4.9.2.Our_House_V_0.55_main.cpp">
@@ -56,6 +68,9 @@
     <ClCompile Include="Shaders.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Texture_Manager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Scene_Definitions.h">
@@ -65,6 +80,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture_Manager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

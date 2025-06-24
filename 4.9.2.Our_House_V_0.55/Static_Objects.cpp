@@ -50,6 +50,11 @@ void Static_Object::prepare_geom_of_static_object() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, (GLvoid*)(sizeof(glm::vec3)));
 	glEnableVertexAttribArray(1);
 
+	if (n_fields == 8) {
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, (GLvoid*)(2 * sizeof(glm::vec3)));
+		glEnableVertexAttribArray(2);
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
@@ -105,6 +110,8 @@ void Wood_Tower::define_object() {
 	prepare_geom_of_static_object();
 	flag_valid = true;
 
+	force_texture_shader = true;
+
 	instances.emplace_back();
 	cur_MM = &(instances.back().ModelMatrix);
 	*cur_MM = glm::translate(glm::mat4(1.0f), glm::vec3(45.0f, 134.0f, 0.0f));
@@ -116,6 +123,14 @@ void Wood_Tower::define_object() {
 	cur_material->diffuse = glm::vec4(0.4f, 0.6f, 0.3f, 1.0f);
 	cur_material->specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	cur_material->exponent = 15.0f;
+	
+	GLuint texture_id = texture_manager.load_texture("Data/static_objects/Wood_Tower_Col.jpg");
+
+	for (int i = 0; i < instances.size(); i++) {
+		instances[i].texture_id = texture_id;
+		instances[i].use_texture = true;
+	}
+	
 }
 
 void Cat::define_object() {
@@ -200,9 +215,17 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 
 	for (int i = 0; i < instances.size(); i++) {
 		ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * instances[i].ModelMatrix;
-		switch (shader_kind) {
+
+		SHADER_ID actual_shader = shader_kind;
+
+		// Wood Tower는 항상 Phong Texture 쉐이더 사용
+		if (force_texture_shader && instances[i].use_texture && instances[i].texture_id != 0) {
+			actual_shader = SHADER_PHONG_TEXTURE;  // 키보드 입력에 상관없이 항상 Phong Texture
+		}
+		
+		switch (actual_shader) {
 		case SHADER_SIMPLE: {
-			Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[actual_shader]].get());
 			glUseProgram(shader_simple_ptr->h_ShaderProgram);
 			glUniformMatrix4fv(shader_simple_ptr->loc_ModelViewProjectionMatrix, 1, GL_FALSE,
 				&ModelViewProjectionMatrix[0][0]);
@@ -211,7 +234,7 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			break;
 		}
 		case SHADER_GOURAUD: {
-			auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[actual_shader]].get());
 			glUseProgram(shader->h_ShaderProgram);
 
 			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
@@ -238,7 +261,7 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			break;
 		}
 		case SHADER_PHONG: {
-			auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[actual_shader]].get());
 			glUseProgram(shader->h_ShaderProgram);
 
 			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
@@ -264,11 +287,88 @@ void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatr
 			glUniform1f(shader->loc_material_shininess, m.exponent);
 			break;
 		}
+		case SHADER_GOURAUD_TEXTURE: {
+			auto* shader = static_cast<Shader_Gouraud_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+			glm::vec3 view_position_view = glm::vec3(0.0f);
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+			Material& m = instances[i].material;
+			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+
+			// 텍스처 설정
+			if (instances[i].use_texture && instances[i].texture_id != 0) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, instances[i].texture_id);
+				glUniform1i(shader->loc_texture_sampler, 0);
+				glUniform1i(shader->loc_use_texture, 1);
+			}
+			else {
+				glUniform1i(shader->loc_use_texture, 0);
+			}
+			break;
+		}
+		case SHADER_PHONG_TEXTURE: {
+			auto* shader = static_cast<Shader_Phong_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+			glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+			glm::vec3 view_position_view = glm::vec3(0.0f);
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+			glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+			Material& m = instances[i].material;
+			glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+
+			// 텍스처 설정
+			if (instances[i].use_texture && instances[i].texture_id != 0) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, instances[i].texture_id);
+				glUniform1i(shader->loc_texture_sampler, 0);
+				glUniform1i(shader->loc_use_texture, 1);
+			}
+			else {
+				glUniform1i(shader->loc_use_texture, 0);
+			}
+			break;
+		}
 		}
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3 * n_triangles);
 		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);
 	}
 }

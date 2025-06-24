@@ -411,14 +411,19 @@ void Wolf_D::define_object() {
     Material* cur_material;
     flag_valid = true;
 
+    GLuint wolf_texture_id = texture_manager.load_texture("Data/dynamic_objects/wolf/Wolf_Body.jpg");
+
     for (int i = 0; i < N_WOLF_FRAMES; i++) {
         object_frames.emplace_back();
         sprintf(object_frames[i].filename, "Data/dynamic_objects/wolf/wolf_%02d_vnt.geom", i);
         object_frames[i].n_fields = 8;
         object_frames[i].front_face_mode = GL_CW;
-        object_frames[i].prepare_geom_of_static_object();
 
+        object_frames[i].force_texture_shader = true;
+
+        object_frames[i].prepare_geom_of_static_object();
         object_frames[i].instances.emplace_back();
+
         cur_MM = &(object_frames[i].instances.back().ModelMatrix);
 
         *cur_MM = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -432,6 +437,9 @@ void Wolf_D::define_object() {
         cur_material->diffuse = glm::vec4(0.780392f, 0.568627f, 0.113725f, 1.0f);
         cur_material->specular = glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f);
         cur_material->exponent = 128.0f * 0.21794872f;
+
+        object_frames[i].instances.back().texture_id = wolf_texture_id;
+        object_frames[i].instances.back().use_texture = true;
     }
     path_following_wolf.initialize();
 }
@@ -487,7 +495,13 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
 
     for (int i = 0; i < cur_object.instances.size(); i++) {
         glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix * cur_object.instances[i].ModelMatrix;
-        switch (shader_kind) {
+        
+        SHADER_ID actual_shader = shader_kind;
+        if (cur_object.force_texture_shader && cur_object.instances[i].use_texture && cur_object.instances[i].texture_id != 0) {
+            actual_shader = SHADER_PHONG_TEXTURE;  // 텍스처 쉐이더 강제 사용
+        }
+        
+        switch (actual_shader) {
         case SHADER_SIMPLE: {
             Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[shader_kind]].get());
             glUseProgram(shader_simple_ptr->h_ShaderProgram);
@@ -557,10 +571,87 @@ void Dynamic_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMat
             glUniform1f(shader->loc_material_shininess, m.exponent);
             break;
         }
+        case SHADER_GOURAUD_TEXTURE: {
+            auto* shader = static_cast<Shader_Gouraud_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
+            glUseProgram(shader->h_ShaderProgram);
+
+            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
+            glm::mat4 MV = ViewMatrix * FinalModelMatrix;
+            glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+            glm::mat4 MVP = ProjectionMatrix * MV;
+
+            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+            glm::vec3 view_position_view = glm::vec3(0.0f);
+
+            glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+            glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+            Material& m = cur_object.instances[i].material;
+            glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+            glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+            glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+            glUniform1f(shader->loc_material_shininess, m.exponent);
+
+            // 텍스처 설정
+            if (cur_object.instances[i].use_texture && cur_object.instances[i].texture_id != 0) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cur_object.instances[i].texture_id);
+                glUniform1i(shader->loc_texture_sampler, 0);
+                glUniform1i(shader->loc_use_texture, 1);
+            }
+            else {
+                glUniform1i(shader->loc_use_texture, 0);
+            }
+            break;
+        }
+        case SHADER_PHONG_TEXTURE: {
+            auto* shader = static_cast<Shader_Phong_Texture*>(&shader_list[shader_ID_mapper[actual_shader]].get());
+            glUseProgram(shader->h_ShaderProgram);
+
+            glm::mat4 FinalModelMatrix = ModelMatrix * cur_object.instances[i].ModelMatrix;
+            glm::mat4 MV = ViewMatrix * FinalModelMatrix;
+            glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+            glm::mat4 MVP = ProjectionMatrix * MV;
+
+            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, 100.0f);
+            glm::vec3 light_position_view = glm::vec3(ViewMatrix * glm::vec4(light_position_world, 1.0f));
+            glm::vec3 view_position_view = glm::vec3(0.0f);
+
+            glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+            glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+            glUniform3fv(shader->loc_light_position, 1, &light_position_view[0]);
+            glUniform3fv(shader->loc_view_position, 1, &view_position_view[0]);
+
+            Material& m = cur_object.instances[i].material;
+            glUniform4fv(shader->loc_material_ambient, 1, &m.ambient[0]);
+            glUniform4fv(shader->loc_material_diffuse, 1, &m.diffuse[0]);
+            glUniform4fv(shader->loc_material_specular, 1, &m.specular[0]);
+            glUniform1f(shader->loc_material_shininess, m.exponent);
+
+            // 텍스처 설정
+            if (cur_object.instances[i].use_texture && cur_object.instances[i].texture_id != 0) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cur_object.instances[i].texture_id);
+                glUniform1i(shader->loc_texture_sampler, 0);
+                glUniform1i(shader->loc_use_texture, 1);
+            }
+            else {
+                glUniform1i(shader->loc_use_texture, 0);
+            }
+            break;
+        }
         }
         glBindVertexArray(cur_object.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3 * cur_object.n_triangles);
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
         glUseProgram(0);
     }
 }

@@ -13,7 +13,6 @@ void Axis_Object::define_axis() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_axes), &vertices_axes[0][0], GL_STATIC_DRAW);
 
-	// Initialize vertex array object.
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
@@ -33,7 +32,6 @@ void Axis_Object::draw_axis(Shader_Simple* shader_simple, glm::mat4& ViewMatrix,
 	glUseProgram(shader_simple->h_ShaderProgram);
 	glUniformMatrix4fv(shader_simple->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
-
 	glBindVertexArray(VAO);
 	glUniform3fv(shader_simple->loc_primitive_color, 1, axes_color[0]);
 	glDrawArrays(GL_LINES, 0, 2);
@@ -44,6 +42,7 @@ void Axis_Object::draw_axis(Shader_Simple* shader_simple, glm::mat4& ViewMatrix,
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
+
 void Axis_Object::draw_camera_axis(Shader_Simple* shader_simple,
 	glm::mat4& ViewMatrix,
 	glm::mat4& ProjectionMatrix,
@@ -53,14 +52,12 @@ void Axis_Object::draw_camera_axis(Shader_Simple* shader_simple,
 	glm::vec3 naxis,
 	float axis_length) {
 
-	// ȸ�� ��� ����
 	glm::mat4 RotationMatrix = glm::mat4(1.0f);
-	RotationMatrix[0] = glm::vec4(glm::normalize(uaxis), 0.0f);    // X��
-	RotationMatrix[1] = glm::vec4(glm::normalize(vaxis), 0.0f);    // Y��  
-	RotationMatrix[2] = glm::vec4(glm::normalize(-naxis), 0.0f);   // Z��
+	RotationMatrix[0] = glm::vec4(glm::normalize(uaxis), 0.0f);
+	RotationMatrix[1] = glm::vec4(glm::normalize(vaxis), 0.0f);
+	RotationMatrix[2] = glm::vec4(glm::normalize(-naxis), 0.0f);
 	RotationMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// ��ȯ ��� ����: T * R * S
 	glm::mat4 ScaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(axis_length));
 	glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0f), position);
 	glm::mat4 ModelMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
@@ -84,7 +81,7 @@ void Axis_Object::draw_camera_axis(Shader_Simple* shader_simple,
 void Scene::draw_camera_frames() {
 	if (!show_camera_frames) return;
 
-	static bool debug_printed = false;  // ���� ������ �� ���� ���
+	static bool debug_printed = false;
 
 	Shader_Simple* shader_simple_ptr = static_cast<Shader_Simple*>(&shader_list[shader_ID_mapper[SHADER_SIMPLE]].get());
 
@@ -92,7 +89,6 @@ void Scene::draw_camera_frames() {
 		const Camera& cam = camera_ref.get();
 		if (!cam.flag_valid) continue;
 
-		// �� ���� ����� ���
 		if (!debug_printed) {
 			printf("Camera pos: (%.2f, %.2f, %.2f)\n",
 				cam.cam_view.pos.x, cam.cam_view.pos.y, cam.cam_view.pos.z);
@@ -113,10 +109,10 @@ void Scene::draw_camera_frames() {
 			30.0f);
 	}
 
-	debug_printed = true;  // ù ��° ȣ�� �� �÷��� ����
+	debug_printed = true;
 }
 
-void Scene::clock(int clock_id) { // currently one clock
+void Scene::clock(int clock_id) {
 	time_stamp = ++time_stamp % UINT_MAX;
 }
 
@@ -147,7 +143,6 @@ void Scene::build_static_world() {
 }
 
 void Scene::build_dynamic_world() {
-
 	dynamic_geometry_data.wolf_d.define_object();
 	dynamic_object_ID_mapper[DYNAMIC_OBJECT_WOLF] = dynamic_objects.size();
 	dynamic_objects.push_back(dynamic_geometry_data.wolf_d);
@@ -159,7 +154,7 @@ void Scene::build_dynamic_world() {
 
 void Scene::create_camera_list(int win_width, int win_height, float win_aspect_ratio) {
 	camera_list.clear();
-	// main camera
+
 	camera_data.cam_main.define_camera(win_width, win_height, win_aspect_ratio);
 	camera_ID_mapper[CAMERA_MAIN] = camera_list.size();
 	camera_list.push_back(camera_data.cam_main);
@@ -191,9 +186,9 @@ void Scene::create_camera_list(int win_width, int win_height, float win_aspect_r
 	camera_data.cam_side.define_camera(win_width, win_height, win_aspect_ratio);
 	camera_ID_mapper[CAMERA_SIDE] = camera_list.size();
 	camera_list.push_back(camera_data.cam_side);
-
 }
 
+// 수정된 build_shader_list 함수
 void Scene::build_shader_list() {
 	shader_data.shader_simple.prepare_shader();
 	shader_ID_mapper[SHADER_SIMPLE] = shader_list.size();
@@ -206,6 +201,15 @@ void Scene::build_shader_list() {
 	shader_data.shader_phong.prepare_shader();
 	shader_ID_mapper[SHADER_PHONG] = shader_list.size();
 	shader_list.push_back(shader_data.shader_phong);
+
+	// 텍스처 쉐이더들도 정상적으로 추가 (std::ref 제거)
+	shader_data.shader_gouraud_texture.prepare_shader();
+	shader_ID_mapper[SHADER_GOURAUD_TEXTURE] = shader_list.size();
+	shader_list.push_back(shader_data.shader_gouraud_texture);
+
+	shader_data.shader_phong_texture.prepare_shader();
+	shader_ID_mapper[SHADER_PHONG_TEXTURE] = shader_list.size();
+	shader_list.push_back(shader_data.shader_phong_texture);
 }
 
 void Scene::initialize() {
@@ -217,20 +221,13 @@ void Scene::initialize() {
 }
 
 void Scene::draw_static_world() {
-	glm::mat4 ModelViewProjectionMatrix;
 	for (auto static_object = static_objects.begin(); static_object != static_objects.end(); static_object++) {
 		if (static_object->get().flag_valid == false) continue;
-		/*
-		SHADER_ID shader = shader_kind;
-		if (static_object->get().object_id == STATIC_OBJECT_IRON_MAN)
-			shader = ironman_shader_mode;
-		*/
 		static_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list);
 	}
 }
 
 void Scene::draw_dynamic_world() {
-	glm::mat4 ModelViewProjectionMatrix;
 	for (auto dynamic_object = dynamic_objects.begin(); dynamic_object != dynamic_objects.end(); dynamic_object++) {
 		if (dynamic_object->get().flag_valid == false) continue;
 		dynamic_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, time_stamp);
