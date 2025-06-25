@@ -270,6 +270,152 @@ void Bike::define_object() {
 	cur_material->exponent = 0.21794872f * 0.6f;
 }
 
+void Teapot::define_object() {
+	glm::mat4* cur_MM;
+	Material* cur_material;
+	strcpy(filename, "Data/Teapotn_vn.geom");
+	n_fields = 6;
+	front_face_mode = GL_CCW;
+	prepare_geom_of_static_object();
+	flag_valid = true;
+
+	instances.emplace_back();
+	cur_MM = &(instances.back().ModelMatrix);
+	//*cur_MM = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 120.0f, 0.0f));
+	*cur_MM = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+	cur_material = &(instances.back().material);
+	cur_material->emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	cur_material->ambient = glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f);
+	cur_material->diffuse = glm::vec4(0.61424f, 0.04136f, 0.04136f, 1.0f);
+	cur_material->specular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
+	cur_material->exponent = 128.0f * 0.6;
+}
+
+void Teapot::update_animation(float delta_time) {
+	rotation_angle += 45.0f * delta_time; // 초당 45도 회전
+	if (rotation_angle >= 360.0f) {
+		rotation_angle -= 360.0f;
+	}
+
+	// 무게중심 둘레로 회전하는 변환 행렬 생성
+	glm::mat4* cur_MM = &(instances[0].ModelMatrix);
+	*cur_MM = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 120.0f, 10.0f));
+	*cur_MM = glm::rotate(*cur_MM, glm::radians(rotation_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+	*cur_MM = glm::rotate(*cur_MM, glm::radians(rotation_angle * 0.7f), glm::vec3(1.0f, 0.0f, 0.0f));
+	*cur_MM = glm::scale(*cur_MM, glm::vec3(2.0f, 2.0f, 2.0f));
+}
+
+void Teapot::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
+	std::vector<std::reference_wrapper<Shader>>& shader_list, Scene& scene){
+
+	if (!scene.transparency_enabled) {
+		// 일반 렌더링
+		Static_Object::draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, scene);
+		return;
+	}
+
+	// 투명 렌더링 설정
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE); // 깊이 버퍼 쓰기 비활성화
+
+	// 뒷면 먼저 렌더링 (Front-to-Back Order)
+	glCullFace(GL_FRONT);
+	glEnable(GL_CULL_FACE);
+	draw_with_transparency(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, scene);
+
+	// 앞면 렌더링
+	glCullFace(GL_BACK);
+	draw_with_transparency(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, scene);
+
+	// 원래 상태 복원
+	glDisable(GL_CULL_FACE);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+}
+
+void Teapot::draw_with_transparency(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
+	std::vector<std::reference_wrapper<Shader>>& shader_list, const Scene& scene) {
+
+	glm::mat4 ModelViewProjectionMatrix;
+	glFrontFace(front_face_mode);
+
+	for (int i = 0; i < instances.size(); i++) {
+		ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * instances[i].ModelMatrix;
+
+		switch (shader_kind) {
+		case SHADER_GOURAUD: {
+			auto* shader = static_cast<Shader_Gouraud*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			set_lighting_uniforms_gouraud(shader, ViewMatrix, const_cast<Scene&>(scene));
+
+			// 투명도가 적용된 머티리얼
+			Material& m = instances[i].material;
+			glm::vec4 ambient = m.ambient;
+			glm::vec4 diffuse = m.diffuse;
+			glm::vec4 specular = m.specular;
+
+			// 알파 값 적용
+			ambient.a = scene.transparency_alpha;
+			diffuse.a = scene.transparency_alpha;
+			specular.a = scene.transparency_alpha;
+
+			glUniform4fv(shader->loc_material_ambient, 1, &ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+			break;
+		}
+		case SHADER_PHONG: {
+			auto* shader = static_cast<Shader_Phong*>(&shader_list[shader_ID_mapper[shader_kind]].get());
+			glUseProgram(shader->h_ShaderProgram);
+
+			glm::mat4 ModelMatrix = instances[i].ModelMatrix;
+			glm::mat4 MV = ViewMatrix * ModelMatrix;
+			glm::mat3 NormalMatrix = glm::transpose(glm::inverse(glm::mat3(MV)));
+			glm::mat4 MVP = ProjectionMatrix * MV;
+
+			glUniformMatrix4fv(shader->loc_ModelViewMatrix, 1, GL_FALSE, &MV[0][0]);
+			glUniformMatrix4fv(shader->loc_ModelViewProjectionMatrix, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix3fv(shader->loc_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
+
+			set_lighting_uniforms_phong(shader, ViewMatrix, const_cast<Scene&>(scene));
+
+			// 투명도가 적용된 머티리얼
+			Material& m = instances[i].material;
+			glm::vec4 ambient = m.ambient;
+			glm::vec4 diffuse = m.diffuse;
+			glm::vec4 specular = m.specular;
+
+			ambient.a = scene.transparency_alpha;
+			diffuse.a = scene.transparency_alpha;
+			specular.a = scene.transparency_alpha;
+
+			glUniform4fv(shader->loc_material_ambient, 1, &ambient[0]);
+			glUniform4fv(shader->loc_material_diffuse, 1, &diffuse[0]);
+			glUniform4fv(shader->loc_material_specular, 1, &specular[0]);
+			glUniform1f(shader->loc_material_shininess, m.exponent);
+			break;
+		}
+		}
+
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3 * n_triangles);
+		glBindVertexArray(0);
+		glUseProgram(0);
+	}
+}
+
 void Static_Object::draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
 	std::vector<std::reference_wrapper<Shader>>& shader_list, Scene& scene) {
 	glm::mat4 ModelViewProjectionMatrix;

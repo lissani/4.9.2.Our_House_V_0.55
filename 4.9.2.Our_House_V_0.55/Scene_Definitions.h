@@ -28,7 +28,7 @@ enum STATIC_OBJECT_ID {
 	STATIC_OBJECT_BUILDING = 0,
 	STATIC_OBJECT_ANT, STATIC_OBJECT_WOOD_TOWER,
 	STATIC_OBJECT_CAT, STATIC_OBJECT_IRON_MAN,
-	STATIC_OBJECT_BIKE
+	STATIC_OBJECT_BIKE, STATIC_OBJECT_TEAPOT
 };
 
 enum DYNAMIC_OBJECT_ID {
@@ -265,6 +265,25 @@ struct Bike : public Static_Object {
 	void define_object();
 };
 
+struct Teapot : public Static_Object {
+private:
+	float rotation_angle; // 회전 각도
+	glm::vec3 center_position; // 무게중심 위치
+
+public:
+	Teapot(STATIC_OBJECT_ID _object_id) : Static_Object(_object_id), rotation_angle(0.0f) {}
+	void define_object();
+	void update_animation(float delta_time); // 애니메이션 업데이트 메서드 추가
+
+	// 투명 렌더링을 위한 draw_object 오버라이드
+	void draw_object(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
+		std::vector<std::reference_wrapper<Shader>>& shader_list, Scene& scene);
+
+private:
+	void draw_with_transparency(glm::mat4& ViewMatrix, glm::mat4& ProjectionMatrix, SHADER_ID shader_kind,
+		std::vector<std::reference_wrapper<Shader>>& shader_list, const Scene& scene);
+};
+
 struct Static_Geometry_Data {
 	Building building{ STATIC_OBJECT_BUILDING };
 	Ant ant{ STATIC_OBJECT_ANT };
@@ -272,6 +291,7 @@ struct Static_Geometry_Data {
 	Cat cat{ STATIC_OBJECT_CAT };
 	Iron_Man iron_man{ STATIC_OBJECT_IRON_MAN };
 	Bike bike{ STATIC_OBJECT_BIKE };
+	Teapot teapot{ STATIC_OBJECT_TEAPOT };
 };
 
 struct Dynamic_Object {
@@ -348,6 +368,9 @@ struct Scene {
 	bool world_light_enabled = true;   // 세상좌표계 광원
 	bool view_light_enabled = false;   // 눈좌표계 광원
 	bool model_light_enabled = false;  // 모델좌표계 광원
+
+	bool transparency_enabled;     // '6' 키: 투명도 on/off
+	float transparency_alpha;
 
 	LightInfo world_light;    // 세상좌표계 기준 광원
 	LightInfo view_light;     // 눈좌표계 기준 광원

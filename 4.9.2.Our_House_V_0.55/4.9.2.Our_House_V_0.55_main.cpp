@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "Shaders/LoadShaders.h"
@@ -15,6 +16,9 @@ static bool cctv_control_mode = false;
 static bool world_light_enabled = true;   
 static bool view_light_enabled = false;   
 static bool model_light_enabled = false;   
+
+Teapot teapot(STATIC_OBJECT_TEAPOT);
+static auto last_time = std::chrono::high_resolution_clock::now();
 
 void move_main_camera(int axis, float amount) {
 	if (main_camera_index == 4) { 
@@ -67,6 +71,13 @@ void zoom_main_camera(float zoom_factor) {
 }
 
 void display(void) {
+	auto current_time = std::chrono::high_resolution_clock::now();
+	float delta_time = std::chrono::duration<float>(current_time - last_time).count();
+	last_time = current_time;
+
+	// Teapot 애니메이션 업데이트
+	teapot.update_animation(delta_time);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	for (auto camera = scene.camera_list.begin(); camera != scene.camera_list.end(); camera++) {
 		if (camera->get().flag_valid == false) continue;
@@ -244,6 +255,29 @@ void keyboard(unsigned char key, int x, int y) {
 		texture_manager.set_filter_mode(FILTER_LINEAR);
 		glutPostRedisplay();
 		break;
+
+	case '6': // 투명도 효과 토글
+		scene.transparency_enabled = !scene.transparency_enabled;
+		printf("Transparency Effect: %s (Alpha: %.2f)\n",
+			scene.transparency_enabled ? "ON" : "OFF",
+			scene.transparency_alpha);
+		break;
+
+	case '+': // 불투명도 증가
+	case '=': // '+' 키 (shift 없이)
+		if (scene.transparency_enabled) {
+			scene.transparency_alpha = glm::min(1.0f, scene.transparency_alpha + 0.1f);
+			printf("Transparency Alpha: %.2f\n", scene.transparency_alpha);
+		}
+		break;
+
+	case '-': // 불투명도 감소
+	case '_': // '-' 키 (shift 없이)
+		if (scene.transparency_enabled) {
+			scene.transparency_alpha = glm::max(0.1f, scene.transparency_alpha - 0.1f);
+			printf("Transparency Alpha: %.2f\n", scene.transparency_alpha);
+		}
+		break;
 	}
 	glutPostRedisplay();
 }
@@ -297,6 +331,7 @@ void initialize_renderer(void) {
 	register_callbacks();
 	initialize_OpenGL();
 	scene.initialize();
+	teapot.define_object();
 }
 
 void initialize_glew(void) {

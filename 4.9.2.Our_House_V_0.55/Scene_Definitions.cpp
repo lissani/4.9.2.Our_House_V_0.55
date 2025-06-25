@@ -142,6 +142,10 @@ void Scene::build_static_world() {
 	static_geometry_data.bike.define_object();
 	static_object_ID_mapper[STATIC_OBJECT_BIKE] = static_objects.size();
 	static_objects.push_back(static_geometry_data.bike);
+
+	static_geometry_data.teapot.define_object();
+	static_object_ID_mapper[STATIC_OBJECT_TEAPOT] = static_objects.size();
+	static_objects.push_back(static_geometry_data.teapot);
 }
 
 void Scene::build_dynamic_world() {
@@ -218,6 +222,8 @@ void Scene::initialize() {
 	build_dynamic_world();
 	create_camera_list(window.width, window.height, window.aspect_ratio);
 	build_shader_list();
+	scene.transparency_enabled = false;
+	scene.transparency_alpha = 0.6f;
 }
 
 void Scene::draw_static_world() {
@@ -241,7 +247,18 @@ void Scene::draw_axis() {
 
 void Scene::draw_world() {
 	draw_axis();
-	draw_static_world();
+	for (auto static_object = static_objects.begin(); static_object != static_objects.end(); static_object++) {
+		if (static_object->get().flag_valid == false) continue;
+
+		// Teapot이 아닌 경우에만 렌더링 (Teapot은 나중에 투명 렌더링)
+		if (static_object->get().object_id != STATIC_OBJECT_TEAPOT) {
+			static_object->get().draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, *this);
+		}
+	}
 	draw_dynamic_world();
+	extern Teapot teapot; // main.cpp에서 선언된 전역 변수
+	if (teapot.flag_valid) {
+		teapot.draw_object(ViewMatrix, ProjectionMatrix, shader_kind, shader_list, *this);
+	}
 	draw_camera_frames();
 }
